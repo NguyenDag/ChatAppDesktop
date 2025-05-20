@@ -3,6 +3,18 @@
 #include "afxdialogex.h"
 #include "FriendsList.h"
 #include <urlmon.h>
+#include <vector>
+
+struct Friend {
+	CString name;
+	CString avatarPath;
+};
+
+vector<Friend> friends = {
+	{ _T("Nguyễn Văn A"), _T("https://th.bing.com/th?id=OIF.StUEcUP%2bfiJoT%2bceDkb47A&rs=1&pid=ImgDetMain") },
+	{ _T("Trần Thị B"), _T("https://res.cloudinary.com/djj5gopcs/image/upload/v1744612363/download20230704194701_ult1ta.png") },
+	{ _T("Lê Văn C"), _T("https://res.cloudinary.com/djj5gopcs/image/upload/v1744612363/download20230704194701_ult1ta.png") }
+};
 
 #pragma comment(lib, "urlmon.lib")
 #pragma comment(lib, "gdiplus.lib")
@@ -25,8 +37,8 @@ void FriendsList::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_AVATAR, m_avatarCtrl);
 	DDX_Control(pDX, IDC_STATIC_TITLE, m_stTitle);
 	DDX_Control(pDX, IDC_INPUT_SEARCH, m_editSearch);
-	DDX_Control(pDX, IDC_LIST_FRIEND, m_listFriend);
 	DDX_Control(pDX, IDC_STATIC_FULLNAME, m_stFullName);
+	DDX_Control(pDX, IDC_LIST_FRIEND, m_listFriend);
 }
 
 BOOL FriendsList::OnInitDialog()
@@ -65,7 +77,7 @@ BOOL FriendsList::OnInitDialog()
 	HRESULT hr = URLDownloadToFile(NULL, url, localPath, 0, NULL);
 	if (SUCCEEDED(hr))
 	{
-		m_avatarCtrl.SetImagePath(localPath);
+		m_avatarImage = Image::FromFile(localPath);
 	}
 	else
 	{
@@ -110,7 +122,7 @@ BOOL FriendsList::OnInitDialog()
 	int width = static_cast<int>(screenWidth * 0.4);;
 	int height = rectSearch.Height();
 	int left =(dlgWidth - width) / 2;
-	int top = dlgHeight * 0.15;
+	int top = static_cast<int>(dlgHeight * 0.15);
 
 	m_editSearch.MoveWindow(left, top, width, height);
 
@@ -121,11 +133,48 @@ BOOL FriendsList::OnInitDialog()
 	int widthList = static_cast<int>(screenWidth * 0.6);
 	int heightList = static_cast<int>(screenHeight * 0.45);
 	int leftList = (dlgWidth - widthList) / 2;
-	int topList = dlgHeight * 0.3;
+	int topList = static_cast<int>(dlgHeight * 0.3);
 
 	m_listFriend.MoveWindow(leftList, topList, widthList, heightList);
 
+	//m_listFriend.ModifyStyle(0, 0x0020 | LVS_REPORT);
+	//m_listFriend.InsertColumn(0, _T(""), LVCFMT_LEFT, 600);
+	m_listFriend.SetExtendedStyle(LVS_EX_FULLROWSELECT);
+
+	CImageList imageList;
+	imageList.Create(50, 50, ILC_COLOR32, 0, 10);
+	m_listFriend.SetImageList(&imageList, LVSIL_SMALL);
+
+	for (size_t i = 0; i < friends.size(); ++i)
+	{
+		m_listFriend.SetData(localPath, friends[i].name);
+	}
+
 	return TRUE;
+}
+
+void FriendsList::OnPaint()
+{
+	CPaintDC dc(this);
+	CDialogEx::OnPaint();
+	if (m_avatarImage)
+	{
+		CRect rect;
+		m_avatarCtrl.GetWindowRect(&rect);
+		ScreenToClient(&rect);
+
+		int size = min(rect.Width(), rect.Height());
+
+		Graphics graphics(dc);
+		graphics.SetSmoothingMode(SmoothingModeAntiAlias);
+
+		GraphicsPath path;
+		path.AddEllipse(rect.left, rect.top, size, size);
+		Region region(&path);
+		graphics.SetClip(&path);
+
+		graphics.DrawImage(m_avatarImage, rect.left, rect.top, size, size);
+	}
 }
 
 void FriendsList::OnDestroy()
@@ -162,7 +211,6 @@ HBRUSH FriendsList::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 
 BEGIN_MESSAGE_MAP(FriendsList, CDialogEx)
 	ON_WM_CTLCOLOR()
+	ON_WM_PAINT()
 END_MESSAGE_MAP()
 
-
-// FriendsList message handlers

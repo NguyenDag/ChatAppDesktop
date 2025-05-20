@@ -45,7 +45,7 @@
     <ClInclude Include="FriendsList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="CAvatarCtrl.h">
+    <ClInclude Include="FriendItemCtrl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -68,7 +68,7 @@
     <ClCompile Include="FriendsList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="CAvatarCtrl.cpp">
+    <ClCompile Include="FriendItemCtrl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

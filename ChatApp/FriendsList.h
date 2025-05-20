@@ -1,8 +1,10 @@
 ﻿#pragma once
 #include "afxdialogex.h"
-#include "CAvatarCtrl.h"
 #include <gdiplus.h>
+#include "FriendItemCtrl.h"
+#include <vector>
 using namespace Gdiplus;
+using namespace std;
 
 
 // FriendsList dialog
@@ -23,6 +25,7 @@ public:
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	virtual BOOL OnInitDialog();
+	virtual void OnPaint();
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	afx_msg void OnDestroy(); // để shutdown GDI+
 
@@ -30,7 +33,9 @@ protected:
 
 private:
 	CBrush m_brushBackground;
-	CAvatarCtrl m_avatarCtrl;
+	CStatic m_avatarCtrl;
+	Image* m_avatarImage;
+	CFriendItemCtrl m_listFriend;
 
 	// GDI+ khởi tạo
 	GdiplusStartupInput m_gdiplusStartupInput;
@@ -41,5 +46,5 @@ private:
 
 	CFont m_fontTitle;
 	CFont m_fontText;
-	CListCtrl m_listFriend;
+	CImageList m_ImageList;
 };

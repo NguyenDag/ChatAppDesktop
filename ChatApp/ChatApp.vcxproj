@@ -183,10 +183,10 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="CAvatarCtrl.h" />
     <ClInclude Include="ChatApp.h" />
     <ClInclude Include="ChatAppDlg.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="FriendItemCtrl.h" />
     <ClInclude Include="FriendsList.h" />
     <ClInclude Include="Login.h" />
     <ClInclude Include="pch.h" />
@@ -195,9 +195,9 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CAvatarCtrl.cpp" />
     <ClCompile Include="ChatApp.cpp" />
     <ClCompile Include="ChatAppDlg.cpp" />
+    <ClCompile Include="FriendItemCtrl.cpp" />
     <ClCompile Include="FriendsList.cpp" />
     <ClCompile Include="Login.cpp" />
     <ClCompile Include="pch.cpp">
