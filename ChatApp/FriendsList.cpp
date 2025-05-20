@@ -13,7 +13,7 @@ struct Friend {
 vector<Friend> friends = {
 	{ _T("Nguyễn Văn A"), _T("https://th.bing.com/th?id=OIF.StUEcUP%2bfiJoT%2bceDkb47A&rs=1&pid=ImgDetMain") },
 	{ _T("Trần Thị B"), _T("https://res.cloudinary.com/djj5gopcs/image/upload/v1744612363/download20230704194701_ult1ta.png") },
-	{ _T("Lê Văn C"), _T("https://res.cloudinary.com/djj5gopcs/image/upload/v1744612363/download20230704194701_ult1ta.png") }
+	{ _T("Lê Văn C"), _T("https://th.bing.com/th/id/OIP.7gtJht5peBdvIbqUptBqsgHaH7?cb=iwp2&rs=1&pid=ImgDetMain") }
 };
 
 #pragma comment(lib, "urlmon.lib")
@@ -137,8 +137,7 @@ BOOL FriendsList::OnInitDialog()
 
 	m_listFriend.MoveWindow(leftList, topList, widthList, heightList);
 
-	//m_listFriend.ModifyStyle(0, 0x0020 | LVS_REPORT);
-	//m_listFriend.InsertColumn(0, _T(""), LVCFMT_LEFT, 600);
+	m_listFriend.ModifyStyle(LVS_TYPEMASK, LVS_ICON);
 	m_listFriend.SetExtendedStyle(LVS_EX_FULLROWSELECT);
 
 	CImageList imageList;
@@ -147,7 +146,12 @@ BOOL FriendsList::OnInitDialog()
 
 	for (size_t i = 0; i < friends.size(); ++i)
 	{
-		m_listFriend.SetData(localPath, friends[i].name);
+		CString fileName;
+		fileName.Format(_T("avatar\\friend_%d.png"), i);
+
+		// Tải ảnh từ URL về file local
+		HRESULT hr = URLDownloadToFile(NULL, friends[i].avatarPath, fileName, 0, NULL);
+		m_listFriend.SetData(fileName, friends[i].name);
 	}
 
 	return TRUE;
