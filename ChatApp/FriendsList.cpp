@@ -122,6 +122,7 @@ BOOL FriendsList::OnInitDialog()
 		ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
 		DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, _T("Roboto"));
 	m_stFullName.SetFont(&m_fontText);
+	m_stNameListFriend.SetFont(&m_fontText);
 
 	//set logo bkav font
 	m_fontTitle.CreateFont(28, 0, 0, 0, FW_BOLD, FALSE, FALSE, 0,
@@ -153,7 +154,7 @@ BOOL FriendsList::OnInitDialog()
 
 	m_listFriend.MoveWindow(leftList, topList, widthList, heightList);
 
-	m_listFriend.ModifyStyle(LVS_TYPEMASK, LVS_LIST);
+	m_listFriend.ModifyStyle(LVS_TYPEMASK, LVS_REPORT);
 	m_listFriend.SetExtendedStyle(LVS_EX_FULLROWSELECT);
 
 	CImageList imageList;
@@ -170,6 +171,13 @@ BOOL FriendsList::OnInitDialog()
 		m_listFriend.SetData(fileName, friends[i].name);
 	}
 
+	//==========set title for list control========
+	CRect rectNameList;
+	m_stNameListFriend.GetWindowRect(&rectNameList);
+
+	int topTitleList = static_cast<int>(dlgHeight * 0.25);
+
+	m_stNameListFriend.MoveWindow(leftList + 10, topTitleList, rectNameList.Width(), rectNameList.Height());
 	return TRUE;
 }
 
@@ -221,6 +229,11 @@ HBRUSH FriendsList::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 		return (HBRUSH)m_brushBackground.GetSafeHandle();
 	}
 	else if (id == IDC_STATIC_FULLNAME)
+	{
+		pDC->SetBkMode(TRANSPARENT);
+		return (HBRUSH)m_brushBackground.GetSafeHandle();
+	}
+	else if (id == IDC_STATIC_NAME_LIST_FRIEND)
 	{
 		pDC->SetBkMode(TRANSPARENT);
 		return (HBRUSH)m_brushBackground.GetSafeHandle();
