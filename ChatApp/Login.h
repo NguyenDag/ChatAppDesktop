@@ -22,7 +22,7 @@ protected:
 	virtual BOOL OnInitDialog();
     afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	afx_msg void OnBnClickedLogin();
-    BOOL AuthorLogin(const CString& username, const CString& password, json& response, CString& errorMessage);
+    BOOL AuthorLogin(const CString& username, const CString& password, CString& errorMessage);
 	afx_msg void OnStnClickedRegister();
 	DECLARE_MESSAGE_MAP()
 
