@@ -13,7 +13,23 @@ struct Friend {
 vector<Friend> friends = {
 	{ _T("Nguyễn Văn A"), _T("https://th.bing.com/th?id=OIF.StUEcUP%2bfiJoT%2bceDkb47A&rs=1&pid=ImgDetMain") },
 	{ _T("Trần Thị B"), _T("https://res.cloudinary.com/djj5gopcs/image/upload/v1744612363/download20230704194701_ult1ta.png") },
-	{ _T("Lê Văn C"), _T("https://th.bing.com/th/id/OIP.7gtJht5peBdvIbqUptBqsgHaH7?cb=iwp2&rs=1&pid=ImgDetMain") }
+	{ _T("Lê Văn C"), _T("https://th.bing.com/th/id/OIP.7gtJht5peBdvIbqUptBqsgHaH7?cb=iwp2&rs=1&pid=ImgDetMain") },
+	{ _T("Phạm Minh D"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/11.1.jpg?alt=media&token=b19c9101-aa13-47d3-91d3-763b2f3032dc") },
+	{ _T("Hoàng Thị E"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/10.1.jpg?alt=media&token=6d0b3ce9-bbea-4a41-9af2-14559e1b0f9c") },
+	{ _T("Đỗ Văn F"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/12.1.jpg?alt=media&token=7a73d56d-abbc-43f3-a229-dd9adfbd280f") },
+	{ _T("Ngô Thị G"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/13.1.jpg?alt=media&token=0e0ad1e2-ca9c-4e90-b73e-894593a96ac8") },
+	{ _T("Bùi Văn H"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/14.1.jpg?alt=media&token=ac23da06-256f-4d57-8b9b-80040145c142") },
+	{ _T("Vũ Thị I"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/15.1.jpg?alt=media&token=d4606aa6-dc7a-4a96-8b65-db408d9d3d6e") },
+	{ _T("Lý Văn K"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/16.1.jpg?alt=media&token=43621ce1-5045-42e8-bbef-e165500d8f7c") },
+	{ _T("Trần Thị B"), _T("https://res.cloudinary.com/djj5gopcs/image/upload/v1744612363/download20230704194701_ult1ta.png") },
+	{ _T("Lê Văn C"), _T("https://th.bing.com/th/id/OIP.7gtJht5peBdvIbqUptBqsgHaH7?cb=iwp2&rs=1&pid=ImgDetMain") },
+	{ _T("Phạm Minh D"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/11.1.jpg?alt=media&token=b19c9101-aa13-47d3-91d3-763b2f3032dc") },
+	{ _T("Hoàng Thị E"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/10.1.jpg?alt=media&token=6d0b3ce9-bbea-4a41-9af2-14559e1b0f9c") },
+	{ _T("Đỗ Văn F"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/12.1.jpg?alt=media&token=7a73d56d-abbc-43f3-a229-dd9adfbd280f") },
+	{ _T("Ngô Thị G"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/13.1.jpg?alt=media&token=0e0ad1e2-ca9c-4e90-b73e-894593a96ac8") },
+	{ _T("Bùi Văn H"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/14.1.jpg?alt=media&token=ac23da06-256f-4d57-8b9b-80040145c142") },
+	{ _T("Vũ Thị I"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/15.1.jpg?alt=media&token=d4606aa6-dc7a-4a96-8b65-db408d9d3d6e") },
+	{ _T("Lý Văn K"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/16.1.jpg?alt=media&token=43621ce1-5045-42e8-bbef-e165500d8f7c") }
 };
 
 #pragma comment(lib, "urlmon.lib")
@@ -137,7 +153,7 @@ BOOL FriendsList::OnInitDialog()
 
 	m_listFriend.MoveWindow(leftList, topList, widthList, heightList);
 
-	m_listFriend.ModifyStyle(LVS_TYPEMASK, LVS_ICON);
+	m_listFriend.ModifyStyle(LVS_TYPEMASK, LVS_LIST);
 	m_listFriend.SetExtendedStyle(LVS_EX_FULLROWSELECT);
 
 	CImageList imageList;
@@ -147,7 +163,7 @@ BOOL FriendsList::OnInitDialog()
 	for (size_t i = 0; i < friends.size(); ++i)
 	{
 		CString fileName;
-		fileName.Format(_T("avatar\\friend_%d.png"), i);
+		fileName.Format(_T("avatar\\friend_%d.png"), (int)i);
 
 		// Tải ảnh từ URL về file local
 		HRESULT hr = URLDownloadToFile(NULL, friends[i].avatarPath, fileName, 0, NULL);
