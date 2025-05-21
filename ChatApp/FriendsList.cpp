@@ -22,9 +22,9 @@ vector<Friend> friends = {
 
 IMPLEMENT_DYNAMIC(FriendsList, CDialogEx)
 
-FriendsList::FriendsList(CWnd* pParent /*=nullptr*/)  
-: CDialogEx(IDD_FRIENDSLIST_DIALOG, pParent), m_gdiplusToken(0)
-{  
+FriendsList::FriendsList(CWnd* pParent /*=nullptr*/)
+	: CDialogEx(IDD_FRIENDSLIST_DIALOG, pParent), m_gdiplusToken(0)
+{
 }
 
 FriendsList::~FriendsList()
@@ -45,7 +45,7 @@ BOOL FriendsList::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	// Lấy kích thước màn hình
+	//========get size of screen==========
 	CRect screenRect;
 	::SystemParametersInfo(SPI_GETWORKAREA, 0, &screenRect, 0);
 
@@ -68,7 +68,7 @@ BOOL FriendsList::OnInitDialog()
 
 	m_brushBackground.CreateSolidBrush(RGB(255, 255, 255));
 
-	// Tạo thư mục lưu nếu chưa có
+	//============set folder if not exists========
 	CreateDirectory(_T("avatar"), NULL);
 
 	CString url = _T("https://res.cloudinary.com/djj5gopcs/image/upload/v1744612363/download20230704194701_ult1ta.png");
@@ -84,18 +84,17 @@ BOOL FriendsList::OnInitDialog()
 		AfxMessageBox(_T("Tải ảnh avatar thất bại!"));
 	}
 
-	//set vị trí avatar 
+	//=============set vị trí avatar========== 
 	int avatarX = dlgWidth - 120;
 	int avatarY = 30; //margin top
 	int avatarWidth = 70;
 	int avatarHeight = 70;
-	
-	// Di chuyển control đến vị trí mong muốn
+
 	m_avatarCtrl.MoveWindow(avatarX, avatarY, avatarWidth, avatarHeight);
 
-	//set fullname
+	//==========set name for account=========
 	CRect rectFullName;
-	m_stFullName.GetWindowRect(&rectFullName);// lấy tọa độ màn hình
+	m_stFullName.GetWindowRect(&rectFullName);
 
 	int widthFullName = rectFullName.Width();
 	int heightFullName = rectFullName.Height();
@@ -107,28 +106,28 @@ BOOL FriendsList::OnInitDialog()
 		DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, _T("Roboto"));
 	m_stFullName.SetFont(&m_fontText);
 
-	//set logo bkav
+	//set logo bkav font
 	m_fontTitle.CreateFont(28, 0, 0, 0, FW_BOLD, FALSE, FALSE, 0,
 		ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
 		DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, _T("Roboto"));
 
 	m_stTitle.SetFont(&m_fontTitle);
 
-	//set chiều rộng cho input search
+	//==========set for search input=========
 	CRect rectSearch;
-	m_editSearch.GetWindowRect(&rectSearch);// lấy tọa độ màn hình
-	ScreenToClient(&rectSearch);// chuyển về tọa độ client
+	m_editSearch.GetWindowRect(&rectSearch);
+	ScreenToClient(&rectSearch);
 
 	int width = static_cast<int>(screenWidth * 0.4);;
 	int height = rectSearch.Height();
-	int left =(dlgWidth - width) / 2;
+	int left = (dlgWidth - width) / 2;
 	int top = static_cast<int>(dlgHeight * 0.15);
 
 	m_editSearch.MoveWindow(left, top, width, height);
 
-	//set vị trí list Friend
+	//==========set for list control=============
 	CRect rectList;
-	m_listFriend.GetWindowRect(&rectList);// lấy tọa độ màn hình
+	m_listFriend.GetWindowRect(&rectList);
 
 	int widthList = static_cast<int>(screenWidth * 0.6);
 	int heightList = static_cast<int>(screenHeight * 0.45);
@@ -147,7 +146,7 @@ BOOL FriendsList::OnInitDialog()
 	for (size_t i = 0; i < friends.size(); ++i)
 	{
 		CString fileName;
-		fileName.Format(_T("avatar\\friend_%d.png"), i);
+		fileName.Format(_T("avatar\\friend_%d.png"), (int)i);
 
 		// Tải ảnh từ URL về file local
 		HRESULT hr = URLDownloadToFile(NULL, friends[i].avatarPath, fileName, 0, NULL);
@@ -157,6 +156,7 @@ BOOL FriendsList::OnInitDialog()
 	return TRUE;
 }
 
+//=========Paint for avatar==========
 void FriendsList::OnPaint()
 {
 	CPaintDC dc(this);
@@ -199,13 +199,12 @@ HBRUSH FriendsList::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 	}
 	else if (id == IDC_STATIC_TITLE)
 	{
-		pDC->SetTextColor(RGB(0, 102, 255)); // Màu xanh dương
+		pDC->SetTextColor(RGB(0, 102, 255)); // Blue
 		pDC->SetBkMode(TRANSPARENT);
 		return (HBRUSH)m_brushBackground.GetSafeHandle();
 	}
 	else if (id == IDC_STATIC_FULLNAME)
 	{
-		//pDC->SetTextColor(RGB(0, 102, 255)); // Màu xanh dương
 		pDC->SetBkMode(TRANSPARENT);
 		return (HBRUSH)m_brushBackground.GetSafeHandle();
 	}
