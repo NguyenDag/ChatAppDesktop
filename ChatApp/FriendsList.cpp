@@ -55,6 +55,7 @@ void FriendsList::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_INPUT_SEARCH, m_editSearch);
 	DDX_Control(pDX, IDC_STATIC_FULLNAME, m_stFullName);
 	DDX_Control(pDX, IDC_LIST_FRIEND, m_listFriend);
+	DDX_Control(pDX, IDC_STATIC_NAME_LIST_FRIEND, m_stNameListFriend);
 }
 
 BOOL FriendsList::OnInitDialog()

@@ -47,4 +47,5 @@ private:
 	CFont m_fontTitle;
 	CFont m_fontText;
 	CImageList m_ImageList;
+	CStatic m_stNameListFriend;
 };
