@@ -5,16 +5,6 @@
 #include "FriendsList.h"
 #include "RegisterDialog.h"
 
-#include <cpprest/http_client.h>  
-#include <cpprest/json.h>       
-#include <iostream>           
-#include <string>         
-
-using namespace web;         
-using namespace web::http;       
-using namespace web::http::client;
-using namespace utility;      
-using json = nlohmann::json;
 // Login dialog
 
 IMPLEMENT_DYNAMIC(Login, CDialogEx)
@@ -224,7 +214,7 @@ void Login::OnBnClickedLogin()
 	return;
 }
 
-BOOL Login::AuthorLogin(const CString& username, const CString& password, json& response, CString& errorMessage)
+BOOL Login::AuthorLogin(const CString& username, const CString& password, CString& errorMessage)
 {
 
 	return 0;
