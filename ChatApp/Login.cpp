@@ -1,14 +1,20 @@
-﻿// Login.cpp : implementation file
-//
-
-#include "pch.h"
+﻿#include "pch.h"
 #include "ChatApp.h"
 #include "afxdialogex.h"
 #include "Login.h"
 #include "FriendsList.h"
 #include "RegisterDialog.h"
 
+#include <cpprest/http_client.h>  
+#include <cpprest/json.h>       
+#include <iostream>           
+#include <string>         
 
+using namespace web;         
+using namespace web::http;       
+using namespace web::http::client;
+using namespace utility;      
+using json = nlohmann::json;
 // Login dialog
 
 IMPLEMENT_DYNAMIC(Login, CDialogEx)
@@ -217,6 +223,13 @@ void Login::OnBnClickedLogin()
 	friendsList.DoModal();
 	return;
 }
+
+BOOL Login::AuthorLogin(const CString& username, const CString& password, json& response, CString& errorMessage)
+{
+
+	return 0;
+}
+
 
 void Login::OnStnClickedRegister()
 {
