@@ -93,11 +93,11 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_WINDOWS;_DEBUG;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>D:\desktop\lib\curl</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\desktop\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>libcurl_a.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcurl_a_debug.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>D:\desktop\lib\Lib</AdditionalLibraryDirectories>
     </Link>
     <Midl>

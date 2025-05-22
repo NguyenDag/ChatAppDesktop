@@ -4,6 +4,8 @@
 #include "Login.h"
 #include "FriendsList.h"
 #include "RegisterDialog.h"
+#include <string>
+#include <curl/curl.h>
 
 // Login dialog
 
@@ -68,7 +70,7 @@ BOOL Login::OnInitDialog()
 	m_editUsername.GetWindowRect(&rectUsername);// lấy tọa độ màn hình
 	ScreenToClient(&rectUsername);// chuyển về tọa độ client
 
-	int left = rectUsername.left;  // static rộng 100, cách 10
+	int left = rectUsername.left; 
 	int top = rectUsername.top;
 	int width = 270;
 	int height = rectUsername.Height();
@@ -80,7 +82,7 @@ BOOL Login::OnInitDialog()
 	m_editPassword.GetWindowRect(&rectPassword);// lấy tọa độ màn hình
 	ScreenToClient(&rectPassword);// chuyển về tọa độ client
 
-	int leftpass = rectPassword.left;  // static rộng 100, cách 10
+	int leftpass = rectPassword.left; 
 	int toppass = rectPassword.top;
 
 	m_editPassword.MoveWindow(leftpass, toppass, width, height);
@@ -192,10 +194,8 @@ void Login::OnBnClickedLogin()
 	{
 		errorMessage = _T("Mật khẩu không được để trống");
 	}
-	else if (username != _T("user1") || password != _T("123"))
-	{
-		errorMessage = _T("Bạn nhập sai tên tài khoản hoặc mật khẩu!");
-	}
+	else
+		LoginAccount(username, password, errorMessage);
 
 	if (!errorMessage.IsEmpty()) {
 		m_stError.ShowWindow(SW_SHOW);
@@ -203,8 +203,7 @@ void Login::OnBnClickedLogin()
 		return;
 	}
 
-	// Nếu đến đây thì đăng nhập thành công
-	m_stError.SetWindowTextW(_T("")); // Xóa lỗi cũ (nếu có)
+	m_stError.SetWindowTextW(_T("")); 
 	AfxMessageBox(_T("Đăng nhập thành công"));
 
 	//ShowWindow(SW_HIDE); // ẩn trang login
@@ -214,12 +213,73 @@ void Login::OnBnClickedLogin()
 	return;
 }
 
-BOOL Login::AuthorLogin(const CString& username, const CString& password, CString& errorMessage)
-{
-
-	return 0;
+// Callback để nhận dữ liệu từ libcurl
+static size_t WriteCallback(void* contents, size_t size, size_t nmemb, string* userp) {
+	size_t totalSize = size * nmemb;
+	userp->append((char*)contents, totalSize);
+	return totalSize;
 }
 
+void Login::LoginAccount(const CString& username, const CString& password, CString& errorMessage)
+{
+	CURL* curl;
+	CURLcode res;
+	string readBuffer;
+
+	// JSON body
+	string jsonBody = "{\"Username\":\"" + string(CT2A(username)) +
+		"\",\"Password\":\"" + string(CT2A(password)) + "\"}";
+
+	// Init libcurl
+	curl_global_init(CURL_GLOBAL_DEFAULT);
+	curl = curl_easy_init();
+
+	if (curl) {
+		// URL & POST
+		curl_easy_setopt(curl, CURLOPT_URL, "http://30.30.30.85:8888/api/auth/login");
+		curl_easy_setopt(curl, CURLOPT_POST, 1L);
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, jsonBody.c_str());
+
+		// Headers
+		struct curl_slist* headers = nullptr;
+		headers = curl_slist_append(headers, "Content-Type: application/json");
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+		// Callback
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+		// Perform
+		res = curl_easy_perform(curl);
+
+		if (res != CURLE_OK) {
+			errorMessage = _T("Lỗi kết nối: ") + CString(curl_easy_strerror(res));
+		}
+		else if (readBuffer.find("\"status\":1") != string::npos &&
+			readBuffer.find("\"message\":\"success register\"") != string::npos) {
+			errorMessage = _T(""); // Success
+		}
+		else {
+			size_t msgPos = readBuffer.find("\"message\":\"");
+			if (msgPos != string::npos) {
+				msgPos += strlen("\"message\":\"");
+				size_t endPos = readBuffer.find("\"", msgPos);
+				string message = readBuffer.substr(msgPos, endPos - msgPos);
+				errorMessage = CString(message.c_str());
+			}
+			else {
+				errorMessage = _T("Đăng nhập thất bại: ") + CString(readBuffer.c_str());
+			}
+		}
+		curl_slist_free_all(headers);
+		curl_easy_cleanup(curl);
+	}
+	else {
+		errorMessage = _T("Không thể khởi tạo libcurl!");
+	}
+
+	curl_global_cleanup();
+}
 
 void Login::OnStnClickedRegister()
 {

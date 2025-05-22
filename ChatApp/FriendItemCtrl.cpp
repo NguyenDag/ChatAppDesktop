@@ -76,7 +76,6 @@ void CFriendItemCtrl::OnPaint()
         CRect avatarRect(padding, y, padding + avatarSize, y + avatarSize);
         DrawCircleAvatar(graphics, m_pImage[i], avatarRect);
 
-        // Vẽ tên bên phải avatar
         CStringW wideName(m_name[i]);
         graphics.DrawString(wideName, -1, &font,
             PointF((REAL)(avatarRect.right + textOffset), (REAL)(y + avatarSize / 4)),

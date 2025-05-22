@@ -25,7 +25,7 @@ protected:
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	afx_msg void OnBnClickedButtonRegister();
 
-	BOOL RegisterAccount(const CString& fullName, const CString& username, const CString& password, CString& errorMessage);
+	void RegisterAccount(const CString& fullName, const CString& username, const CString& password, CString& errorMessage);
 
 	DECLARE_MESSAGE_MAP()
 private:

@@ -1,12 +1,9 @@
-﻿// RegisterDialog.cpp : implementation file
-//
-
-#include "pch.h"
+﻿#include "pch.h"
 #include "ChatApp.h"
 #include "afxdialogex.h"
 #include "RegisterDialog.h"
 #include "Login.h"
-#include <curl.h>
+#include <curl/curl.h>
 #include <string>
 
 using namespace std;
@@ -207,14 +204,14 @@ void RegisterDialog::OnBnClickedButtonRegister()
 		errorMessage = _T("Mật khẩu không khớp!");
 	}
 	else
-	RegisterAccount(name, username, password, errorMessage);
+		RegisterAccount(name, username, password, errorMessage);
 	if (!errorMessage.IsEmpty()) {
 		m_stError.ShowWindow(SW_SHOW);
 		m_stError.SetWindowTextW(errorMessage);
 		return;
 	}
 	m_stError.SetWindowTextW(_T(""));
-	AfxMessageBox(_T("Đăng nhập thành công"));
+	AfxMessageBox(_T("Đăng ký thành công"));
 
 	EndDialog(IDOK);
 
@@ -229,69 +226,64 @@ static size_t WriteCallback(void* contents, size_t size, size_t nmemb, string* u
 	return totalSize;
 }
 
- //Hàm gửi yêu cầu đăng ký
-BOOL RegisterDialog::RegisterAccount(const CString& fullName, const CString& username, const CString& password, CString& errorMessage) {
+//Hàm gửi yêu cầu đăng ký
+void RegisterDialog::RegisterAccount(const CString& fullName, const CString& username, const CString& password, CString& errorMessage) {
 	CURL* curl;
 	CURLcode res;
 	string readBuffer;
 
-	// Chuẩn bị JSON body
+	// JSON body
 	string jsonBody = "{\"FullName\":\"" + string(CT2A(fullName)) +
 		"\",\"Username\":\"" + string(CT2A(username)) +
 		"\",\"Password\":\"" + string(CT2A(password)) + "\"}";
 
-	// Khởi tạo libcurl
+	// Init libcurl
 	curl_global_init(CURL_GLOBAL_DEFAULT);
 	curl = curl_easy_init();
+
 	if (curl) {
-		// Thiết lập URL
+		// URL & POST
 		curl_easy_setopt(curl, CURLOPT_URL, "http://30.30.30.85:8888/api/auth/register");
-
-		// Thiết lập phương thức POST
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, jsonBody.c_str());
 
-		// Thiết lập header Content-Type: application/json
+		// Headers
 		struct curl_slist* headers = nullptr;
 		headers = curl_slist_append(headers, "Content-Type: application/json");
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-		// Thiết lập JSON body
-		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, jsonBody.c_str());
-
-		// Thiết lập callback để nhận phản hồi
+		// Callback
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
-		// Thực hiện yêu cầu
+		// Perform
 		res = curl_easy_perform(curl);
+
 		if (res != CURLE_OK) {
 			errorMessage = _T("Lỗi kết nối: ") + CString(curl_easy_strerror(res));
-			curl_slist_free_all(headers);
-			curl_easy_cleanup(curl);
-			curl_global_cleanup();
-			return false;
 		}
-
-		// Kiểm tra phản hồi
-		if (readBuffer.find("\"status\":1") != string::npos &&
+		else if (readBuffer.find("\"status\":1") != string::npos &&
 			readBuffer.find("\"message\":\"success register\"") != string::npos) {
-			// Đăng ký thành công
-			curl_slist_free_all(headers);
-			curl_easy_cleanup(curl);
-			curl_global_cleanup();
-			return true;
+			errorMessage = _T(""); // Success
 		}
 		else {
-			// Đăng ký thất bại, lấy thông tin lỗi từ phản hồi nếu có
-			errorMessage = _T("Đăng ký thất bại: ") + CString(readBuffer.c_str());
-			curl_slist_free_all(headers);
-			curl_easy_cleanup(curl);
-			curl_global_cleanup();
-			return false;
+			size_t msgPos = readBuffer.find("\"message\":\"");
+			if (msgPos != string::npos) {
+				msgPos += strlen("\"message\":\"");
+				size_t endPos = readBuffer.find("\"", msgPos);
+				string message = readBuffer.substr(msgPos, endPos - msgPos);
+				errorMessage = CString(message.c_str());
+			}
+			else {
+				errorMessage = _T("Đăng ký thất bại: ") + CString(readBuffer.c_str());
+			}
 		}
+		curl_slist_free_all(headers);
+		curl_easy_cleanup(curl);
+	}
+	else {
+		errorMessage = _T("Không thể khởi tạo libcurl!");
 	}
 
-	errorMessage = _T("Không thể khởi tạo libcurl!");
 	curl_global_cleanup();
-	return false;
 }

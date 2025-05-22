@@ -4,13 +4,96 @@
 #include "FriendsList.h"
 #include <urlmon.h>
 #include <vector>
+#include <nlohmann/json.hpp>
+#include <curl/curl.h>
+#include <iostream>
 
-struct Friend {
-	CString name;
-	CString avatarPath;
+#pragma comment(lib, "urlmon.lib")
+#pragma comment(lib, "gdiplus.lib")
+
+using json = nlohmann::json;
+
+struct FriendInfo {
+	string FriendID;
+	string FullName;
+	string Username;
+	string Avatar;
+	bool isOnline;
+	string Content;
+	bool isSend;
 };
 
-vector<Friend> friends = {
+// Callback để nhận dữ liệu từ libcurl
+static size_t WriteCallback(void* contents, size_t size, size_t nmemb, string* userp) {
+	size_t totalSize = size * nmemb;
+	userp->append((char*)contents, totalSize);
+	return totalSize;
+}
+
+bool GetFriendList(const string& token, vector<FriendInfo>& friendList, string& errorMessage)
+{
+	CURL* curl;
+	CURLcode res;
+	string readBuffer;
+
+	curl = curl_easy_init();
+	if (!curl) {
+		errorMessage = "Không thể khởi tạo CURL";
+		return false;
+	}
+
+	struct curl_slist* headers = nullptr;
+	string authHeader = "Authorization: Bearer " + token;
+	headers = curl_slist_append(headers, authHeader.c_str());
+
+	curl_easy_setopt(curl, CURLOPT_URL, "http://30.30.30.85:8888/api/message/list-friend");
+	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+	res = curl_easy_perform(curl);
+
+	if (res != CURLE_OK) {
+		errorMessage = string("Lỗi kết nối: ") + curl_easy_strerror(res);
+		curl_easy_cleanup(curl);
+		curl_slist_free_all(headers);
+		return false;
+	}
+
+	try {
+		json response = json::parse(readBuffer);
+		if (response["status"] == 1) {
+			for (const auto& item : response["data"]) {
+				FriendInfo f;
+				f.FriendID = item.value("FriendID", "");
+				f.FullName = item.value("FullName", "");
+				f.Username = item.value("Username", "");
+				f.Avatar = item.value("Avatar", "");
+				f.isOnline = item.value("isOnline", false);
+				f.Content = item.value("Content", "");
+				f.isSend = item.value("isSend", 0);
+				friendList.push_back(f);
+			}
+			errorMessage.clear();
+			curl_easy_cleanup(curl);
+			curl_slist_free_all(headers);
+			return true;
+		}
+		else {
+			errorMessage = response.value("message", "Lỗi không xác định");
+		}
+	}
+	catch (const exception& e) {
+		errorMessage = string("Lỗi phân tích JSON: ") + e.what();
+	}
+
+	curl_easy_cleanup(curl);
+	curl_slist_free_all(headers);
+	return false;
+}
+
+/*vector<Friend> friends = {
 	{ _T("Nguyễn Văn A"), _T("https://th.bing.com/th?id=OIF.StUEcUP%2bfiJoT%2bceDkb47A&rs=1&pid=ImgDetMain") },
 	{ _T("Trần Thị B"), _T("https://res.cloudinary.com/djj5gopcs/image/upload/v1744612363/download20230704194701_ult1ta.png") },
 	{ _T("Lê Văn C"), _T("https://th.bing.com/th/id/OIP.7gtJht5peBdvIbqUptBqsgHaH7?cb=iwp2&rs=1&pid=ImgDetMain") },
@@ -31,14 +114,11 @@ vector<Friend> friends = {
 	{ _T("Vũ Thị I"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/15.1.jpg?alt=media&token=d4606aa6-dc7a-4a96-8b65-db408d9d3d6e") },
 	{ _T("Lý Văn K"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/16.1.jpg?alt=media&token=43621ce1-5045-42e8-bbef-e165500d8f7c") }
 };
-
-#pragma comment(lib, "urlmon.lib")
-#pragma comment(lib, "gdiplus.lib")
-// FriendsList dialog
+*/
 
 IMPLEMENT_DYNAMIC(FriendsList, CDialogEx)
 
-FriendsList::FriendsList(CWnd* pParent /*=nullptr*/)
+FriendsList::FriendsList(CWnd* pParent)
 	: CDialogEx(IDD_FRIENDSLIST_DIALOG, pParent), m_gdiplusToken(0)
 {
 }
@@ -161,7 +241,20 @@ BOOL FriendsList::OnInitDialog()
 	imageList.Create(50, 50, ILC_COLOR32, 0, 10);
 	m_listFriend.SetImageList(&imageList, LVSIL_SMALL);
 
-	for (size_t i = 0; i < friends.size(); ++i)
+//========handling get list friends by token========
+	vector<FriendInfo> friends;
+	string token = "YOUR_TOKEN_HERE";
+	string error;
+
+	/*if (GetFriendList(token, friends, error)) {
+		for (const auto& f : friends) {
+			cout << "Tên: " << f.FullName << ", Avatar: " << f.Avatar << endl;
+		}
+	}
+	else {
+		MessageBoxA(nullptr, error.c_str(), "Lỗi", MB_ICONERROR);
+	}*/
+	/*for (size_t i = 0; i < friends.size(); ++i)
 	{
 		CString fileName;
 		fileName.Format(_T("avatar\\friend_%d.png"), (int)i);
@@ -169,7 +262,7 @@ BOOL FriendsList::OnInitDialog()
 		// Tải ảnh từ URL về file local
 		HRESULT hr = URLDownloadToFile(NULL, friends[i].avatarPath, fileName, 0, NULL);
 		m_listFriend.SetData(fileName, friends[i].name);
-	}
+	}*/
 
 	//==========set title for list control========
 	CRect rectNameList;
