@@ -6,8 +6,10 @@
 #include "afxdialogex.h"
 #include "RegisterDialog.h"
 #include "Login.h"
+#include <curl.h>
+#include <string>
 
-
+using namespace std;
 // RegisterDialog dialog
 
 IMPLEMENT_DYNAMIC(RegisterDialog, CDialogEx)
@@ -113,8 +115,8 @@ BOOL RegisterDialog::OnInitDialog()
 
 	top += spacing;
 
-// Hiển thị lỗi ở giữa
-	//lấy kích thước của ô static text
+	// Hiển thị lỗi ở giữa
+		//lấy kích thước của ô static text
 	CWnd* pStatic = GetDlgItem(IDC_STATIC_ERROR);
 	if (pStatic)
 	{
@@ -179,7 +181,7 @@ HBRUSH RegisterDialog::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 	//	pDC->SetBkMode(TRANSPARENT);
 	//	return m_brushTransparent;
 	//}
-	
+
 	return hbr;
 }
 
@@ -189,10 +191,7 @@ BEGIN_MESSAGE_MAP(RegisterDialog, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_REGISTER, &RegisterDialog::OnBnClickedButtonRegister)
 END_MESSAGE_MAP()
 
-
-// RegisterDialog message handlers
-
-
+//============handling register button============
 void RegisterDialog::OnBnClickedButtonRegister()
 {
 	UpdateData(TRUE);
@@ -203,27 +202,96 @@ void RegisterDialog::OnBnClickedButtonRegister()
 	{
 		errorMessage = _T("Vui lòng điền đầy đủ thông tin!");
 	}
-	else if (username.Trim() == _T("user1"))
-	{
-		errorMessage = _T("Tài khoản đã tồn tại!");
-	}
 	else if (password != confirmPassword)
 	{
 		errorMessage = _T("Mật khẩu không khớp!");
 	}
-
+	else
+	RegisterAccount(name, username, password, errorMessage);
 	if (!errorMessage.IsEmpty()) {
 		m_stError.ShowWindow(SW_SHOW);
 		m_stError.SetWindowTextW(errorMessage);
 		return;
 	}
-
-	// Nếu đến đây thì đăng nhập thành công
-	m_stError.SetWindowTextW(_T("")); // Xóa lỗi cũ (nếu có)
+	m_stError.SetWindowTextW(_T(""));
 	AfxMessageBox(_T("Đăng nhập thành công"));
 
-	EndDialog(IDOK);//close this dialog
+	EndDialog(IDOK);
 
 	Login login;
 	login.DoModal();
+}
+
+// Callback để nhận dữ liệu từ libcurl
+static size_t WriteCallback(void* contents, size_t size, size_t nmemb, string* userp) {
+	size_t totalSize = size * nmemb;
+	userp->append((char*)contents, totalSize);
+	return totalSize;
+}
+
+ //Hàm gửi yêu cầu đăng ký
+BOOL RegisterDialog::RegisterAccount(const CString& fullName, const CString& username, const CString& password, CString& errorMessage) {
+	CURL* curl;
+	CURLcode res;
+	string readBuffer;
+
+	// Chuẩn bị JSON body
+	string jsonBody = "{\"FullName\":\"" + string(CT2A(fullName)) +
+		"\",\"Username\":\"" + string(CT2A(username)) +
+		"\",\"Password\":\"" + string(CT2A(password)) + "\"}";
+
+	// Khởi tạo libcurl
+	curl_global_init(CURL_GLOBAL_DEFAULT);
+	curl = curl_easy_init();
+	if (curl) {
+		// Thiết lập URL
+		curl_easy_setopt(curl, CURLOPT_URL, "http://30.30.30.85:8888/api/auth/register");
+
+		// Thiết lập phương thức POST
+		curl_easy_setopt(curl, CURLOPT_POST, 1L);
+
+		// Thiết lập header Content-Type: application/json
+		struct curl_slist* headers = nullptr;
+		headers = curl_slist_append(headers, "Content-Type: application/json");
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+
+		// Thiết lập JSON body
+		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, jsonBody.c_str());
+
+		// Thiết lập callback để nhận phản hồi
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+		// Thực hiện yêu cầu
+		res = curl_easy_perform(curl);
+		if (res != CURLE_OK) {
+			errorMessage = _T("Lỗi kết nối: ") + CString(curl_easy_strerror(res));
+			curl_slist_free_all(headers);
+			curl_easy_cleanup(curl);
+			curl_global_cleanup();
+			return false;
+		}
+
+		// Kiểm tra phản hồi
+		if (readBuffer.find("\"status\":1") != string::npos &&
+			readBuffer.find("\"message\":\"success register\"") != string::npos) {
+			// Đăng ký thành công
+			curl_slist_free_all(headers);
+			curl_easy_cleanup(curl);
+			curl_global_cleanup();
+			return true;
+		}
+		else {
+			// Đăng ký thất bại, lấy thông tin lỗi từ phản hồi nếu có
+			errorMessage = _T("Đăng ký thất bại: ") + CString(readBuffer.c_str());
+			curl_slist_free_all(headers);
+			curl_easy_cleanup(curl);
+			curl_global_cleanup();
+			return false;
+		}
+	}
+
+	errorMessage = _T("Không thể khởi tạo libcurl!");
+	curl_global_cleanup();
+	return false;
 }

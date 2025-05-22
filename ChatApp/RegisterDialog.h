@@ -24,6 +24,9 @@ protected:
 	void SetColor(COLORREF bgColor, COLORREF textColor);
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	afx_msg void OnBnClickedButtonRegister();
+
+	BOOL RegisterAccount(const CString& fullName, const CString& username, const CString& password, CString& errorMessage);
+
 	DECLARE_MESSAGE_MAP()
 private:
 	CString name;
