@@ -2,16 +2,47 @@
 #include "FriendItemCtrl.h"
 #pragma comment(lib, "gdiplus.lib")
 
-BEGIN_MESSAGE_MAP(CFriendItemCtrl, CStatic)
-    ON_WM_PAINT()
-END_MESSAGE_MAP()
-
 CFriendItemCtrl::CFriendItemCtrl()
 {
 }
 
 CFriendItemCtrl::~CFriendItemCtrl()
 {
+}
+
+BEGIN_MESSAGE_MAP(CFriendItemCtrl, CStatic)
+END_MESSAGE_MAP()
+
+void CFriendItemCtrl::SetData(const FriendInfo& f)
+{
+    FriendInfo info = f;
+    CString url = _T("https://res.cloudinary.com/djj5gopcs/image/upload/v1744612363/download20230704194701_ult1ta.png");
+    CString localPath = _T("avatar\\avatar.png");
+
+    if (url != 1)//test avatar != empty
+    {
+        Image* pImg = Image::FromFile(localPath);
+        if (pImg && pImg->GetLastStatus() == Ok) {
+            info.AvatarImage = pImg;
+        }
+        else {
+            delete pImg;
+        }
+    }
+
+    friends.push_back(info);
+    int index = InsertItem(GetItemCount(), _T(""));
+    SetItemText(index, 0, f.FullName);
+
+    Invalidate();
+}
+
+void CFriendItemCtrl::ClearFriends()
+{
+    for (auto& f : friends)
+        delete f.AvatarImage;
+    friends.clear();
+    DeleteAllItems();
 }
 
 void CFriendItemCtrl::DrawCircleAvatar(Graphics& graphics, Image* pImage, const CRect& rect)
@@ -27,60 +58,33 @@ void CFriendItemCtrl::DrawCircleAvatar(Graphics& graphics, Image* pImage, const 
     graphics.ResetClip();
 }
 
-void CFriendItemCtrl::SetData(const CString& imagePath, const CString& name)
+
+
+void CFriendItemCtrl::DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct)
 {
-    Image* pImg = Image::FromFile(imagePath);
-    if (!pImg || pImg->GetLastStatus() != Ok)
-    {
-        if (pImg) delete pImg;
-        pImg = nullptr;
-    }
-
-    m_name.push_back(name);
-    m_pImage.push_back(Image::FromFile(imagePath));
-    int index = InsertItem(GetItemCount(), _T(""));
-    SetItemText(index, 0, name);
-
-	Invalidate();
-}
-
-void CFriendItemCtrl::ClearFriends()
-{
-
-}
-
-void CFriendItemCtrl::OnPaint()
-{
-    CPaintDC dc(this);
-    Graphics graphics(dc);
+    CDC* pDC = CDC::FromHandle(lpDrawItemStruct->hDC);
+    Graphics graphics(pDC->GetSafeHdc());
     graphics.SetSmoothingMode(SmoothingModeAntiAlias);
 
-    CRect rect;
-    GetClientRect(&rect);
+    int index = lpDrawItemStruct->itemID;
+    if (index >= (int)friends.size()) return;
 
-    int avatarSize = 50;
-    int padding = 10;
-    // Vẽ nền trắng
+    CRect rect = lpDrawItemStruct->rcItem;
+    const FriendInfo& f = friends[index];
 
-    SolidBrush whiteBrush(Color(255, 255, 255));
-    graphics.FillRectangle(&whiteBrush, rect.left, rect.top, rect.Width(), rect.Height());
+    // Vẽ avatar
+    int avatarSize = 40;
+    int padding = 8;
+    CRect avatarRect(rect.left + padding, rect.top + padding,
+        rect.left + padding + avatarSize, rect.top + padding + avatarSize);
 
-    int textOffset = 10;
-    int y = padding;
+    if (f.AvatarImage)
+        DrawCircleAvatar(graphics, f.AvatarImage, avatarRect);
 
-    Gdiplus::Font font(L"Segoe UI", 14, FontStyleRegular, UnitPixel);
+    Gdiplus::Font font(L"Roboto", 14);
     SolidBrush textBrush(Color(0, 0, 0));
-
-    for (size_t i = 0; i < m_pImage.size(); ++i)
-    {
-        CRect avatarRect(padding, y, padding + avatarSize, y + avatarSize);
-        DrawCircleAvatar(graphics, m_pImage[i], avatarRect);
-
-        CStringW wideName(m_name[i]);
-        graphics.DrawString(wideName, -1, &font,
-            PointF((REAL)(avatarRect.right + textOffset), (REAL)(y + avatarSize / 4)),
-            &textBrush);
-
-        y += avatarSize + padding;
-    }
+    CStringW nameW(f.FullName);
+    graphics.DrawString(nameW, -1, &font,
+        PointF((REAL)(avatarRect.right + 10), (REAL)(rect.top + padding)),
+        &textBrush);
 }

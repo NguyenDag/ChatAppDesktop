@@ -6,8 +6,11 @@
 #include "RegisterDialog.h"
 #include <string>
 #include <curl/curl.h>
+#include <nlohmann/json.hpp>
+#include "Globals.h"
 
-// Login dialog
+using json = nlohmann::json;
+using namespace std;
 
 IMPLEMENT_DYNAMIC(Login, CDialogEx)
 
@@ -240,35 +243,34 @@ void Login::LoginAccount(const CString& username, const CString& password, CStri
 		curl_easy_setopt(curl, CURLOPT_POST, 1L);
 		curl_easy_setopt(curl, CURLOPT_POSTFIELDS, jsonBody.c_str());
 
-		// Headers
 		struct curl_slist* headers = nullptr;
 		headers = curl_slist_append(headers, "Content-Type: application/json");
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 
-		// Callback
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
-		// Perform
 		res = curl_easy_perform(curl);
 
 		if (res != CURLE_OK) {
 			errorMessage = _T("Lỗi kết nối: ") + CString(curl_easy_strerror(res));
 		}
-		else if (readBuffer.find("\"status\":1") != string::npos &&
-			readBuffer.find("\"message\":\"success register\"") != string::npos) {
-			errorMessage = _T(""); // Success
-		}
 		else {
-			size_t msgPos = readBuffer.find("\"message\":\"");
-			if (msgPos != string::npos) {
-				msgPos += strlen("\"message\":\"");
-				size_t endPos = readBuffer.find("\"", msgPos);
-				string message = readBuffer.substr(msgPos, endPos - msgPos);
-				errorMessage = CString(message.c_str());
+			try {
+				json response = json::parse(readBuffer);
+				if (response.contains("status") && response["status"] == 1 &&
+					response.contains("data") && response["data"].contains("token")) {
+
+					g_accessToken = response["data"]["token"].get<string>();
+					errorMessage = _T(""); 
+				}
+				else {
+					string msg = response.value("message", "Đăng nhập thất bại");
+					errorMessage = CString(msg.c_str());
+				}
 			}
-			else {
-				errorMessage = _T("Đăng nhập thất bại: ") + CString(readBuffer.c_str());
+			catch (const exception& ex) {
+				errorMessage = _T("Lỗi phân tích JSON: ") + CString(ex.what());
 			}
 		}
 		curl_slist_free_all(headers);

@@ -194,6 +194,7 @@
     <ClInclude Include="framework.h" />
     <ClInclude Include="FriendItemCtrl.h" />
     <ClInclude Include="FriendsList.h" />
+    <ClInclude Include="Globals.h" />
     <ClInclude Include="Login.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="RegisterDialog.h" />
@@ -205,6 +206,7 @@
     <ClCompile Include="ChatAppDlg.cpp" />
     <ClCompile Include="FriendItemCtrl.cpp" />
     <ClCompile Include="FriendsList.cpp" />
+    <ClCompile Include="Globals.cpp" />
     <ClCompile Include="Login.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

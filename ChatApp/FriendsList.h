@@ -6,9 +6,6 @@
 using namespace Gdiplus;
 using namespace std;
 
-
-// FriendsList dialog
-
 class FriendsList : public CDialogEx
 {
 	DECLARE_DYNAMIC(FriendsList)
@@ -28,6 +25,7 @@ protected:
 	virtual void OnPaint();
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	afx_msg void OnDestroy(); // để shutdown GDI+
+	bool GetFriendList(const string& token, vector<FriendInfo>& friends, string& errorMessage);
 
 	DECLARE_MESSAGE_MAP()
 
@@ -37,7 +35,6 @@ private:
 	Image* m_avatarImage;
 	CFriendItemCtrl m_listFriend;
 
-	// GDI+ khởi tạo
 	GdiplusStartupInput m_gdiplusStartupInput;
 	ULONG_PTR m_gdiplusToken;
 	CStatic m_stTitle;

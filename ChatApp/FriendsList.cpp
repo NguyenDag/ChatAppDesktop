@@ -7,114 +7,12 @@
 #include <nlohmann/json.hpp>
 #include <curl/curl.h>
 #include <iostream>
+#include "Globals.h"
 
 #pragma comment(lib, "urlmon.lib")
 #pragma comment(lib, "gdiplus.lib")
 
 using json = nlohmann::json;
-
-struct FriendInfo {
-	string FriendID;
-	string FullName;
-	string Username;
-	string Avatar;
-	bool isOnline;
-	string Content;
-	bool isSend;
-};
-
-// Callback để nhận dữ liệu từ libcurl
-static size_t WriteCallback(void* contents, size_t size, size_t nmemb, string* userp) {
-	size_t totalSize = size * nmemb;
-	userp->append((char*)contents, totalSize);
-	return totalSize;
-}
-
-bool GetFriendList(const string& token, vector<FriendInfo>& friendList, string& errorMessage)
-{
-	CURL* curl;
-	CURLcode res;
-	string readBuffer;
-
-	curl = curl_easy_init();
-	if (!curl) {
-		errorMessage = "Không thể khởi tạo CURL";
-		return false;
-	}
-
-	struct curl_slist* headers = nullptr;
-	string authHeader = "Authorization: Bearer " + token;
-	headers = curl_slist_append(headers, authHeader.c_str());
-
-	curl_easy_setopt(curl, CURLOPT_URL, "http://30.30.30.85:8888/api/message/list-friend");
-	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
-	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
-	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-
-	res = curl_easy_perform(curl);
-
-	if (res != CURLE_OK) {
-		errorMessage = string("Lỗi kết nối: ") + curl_easy_strerror(res);
-		curl_easy_cleanup(curl);
-		curl_slist_free_all(headers);
-		return false;
-	}
-
-	try {
-		json response = json::parse(readBuffer);
-		if (response["status"] == 1) {
-			for (const auto& item : response["data"]) {
-				FriendInfo f;
-				f.FriendID = item.value("FriendID", "");
-				f.FullName = item.value("FullName", "");
-				f.Username = item.value("Username", "");
-				f.Avatar = item.value("Avatar", "");
-				f.isOnline = item.value("isOnline", false);
-				f.Content = item.value("Content", "");
-				f.isSend = item.value("isSend", 0);
-				friendList.push_back(f);
-			}
-			errorMessage.clear();
-			curl_easy_cleanup(curl);
-			curl_slist_free_all(headers);
-			return true;
-		}
-		else {
-			errorMessage = response.value("message", "Lỗi không xác định");
-		}
-	}
-	catch (const exception& e) {
-		errorMessage = string("Lỗi phân tích JSON: ") + e.what();
-	}
-
-	curl_easy_cleanup(curl);
-	curl_slist_free_all(headers);
-	return false;
-}
-
-/*vector<Friend> friends = {
-	{ _T("Nguyễn Văn A"), _T("https://th.bing.com/th?id=OIF.StUEcUP%2bfiJoT%2bceDkb47A&rs=1&pid=ImgDetMain") },
-	{ _T("Trần Thị B"), _T("https://res.cloudinary.com/djj5gopcs/image/upload/v1744612363/download20230704194701_ult1ta.png") },
-	{ _T("Lê Văn C"), _T("https://th.bing.com/th/id/OIP.7gtJht5peBdvIbqUptBqsgHaH7?cb=iwp2&rs=1&pid=ImgDetMain") },
-	{ _T("Phạm Minh D"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/11.1.jpg?alt=media&token=b19c9101-aa13-47d3-91d3-763b2f3032dc") },
-	{ _T("Hoàng Thị E"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/10.1.jpg?alt=media&token=6d0b3ce9-bbea-4a41-9af2-14559e1b0f9c") },
-	{ _T("Đỗ Văn F"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/12.1.jpg?alt=media&token=7a73d56d-abbc-43f3-a229-dd9adfbd280f") },
-	{ _T("Ngô Thị G"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/13.1.jpg?alt=media&token=0e0ad1e2-ca9c-4e90-b73e-894593a96ac8") },
-	{ _T("Bùi Văn H"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/14.1.jpg?alt=media&token=ac23da06-256f-4d57-8b9b-80040145c142") },
-	{ _T("Vũ Thị I"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/15.1.jpg?alt=media&token=d4606aa6-dc7a-4a96-8b65-db408d9d3d6e") },
-	{ _T("Lý Văn K"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/16.1.jpg?alt=media&token=43621ce1-5045-42e8-bbef-e165500d8f7c") },
-	{ _T("Trần Thị B"), _T("https://res.cloudinary.com/djj5gopcs/image/upload/v1744612363/download20230704194701_ult1ta.png") },
-	{ _T("Lê Văn C"), _T("https://th.bing.com/th/id/OIP.7gtJht5peBdvIbqUptBqsgHaH7?cb=iwp2&rs=1&pid=ImgDetMain") },
-	{ _T("Phạm Minh D"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/11.1.jpg?alt=media&token=b19c9101-aa13-47d3-91d3-763b2f3032dc") },
-	{ _T("Hoàng Thị E"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/10.1.jpg?alt=media&token=6d0b3ce9-bbea-4a41-9af2-14559e1b0f9c") },
-	{ _T("Đỗ Văn F"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/12.1.jpg?alt=media&token=7a73d56d-abbc-43f3-a229-dd9adfbd280f") },
-	{ _T("Ngô Thị G"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/13.1.jpg?alt=media&token=0e0ad1e2-ca9c-4e90-b73e-894593a96ac8") },
-	{ _T("Bùi Văn H"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/14.1.jpg?alt=media&token=ac23da06-256f-4d57-8b9b-80040145c142") },
-	{ _T("Vũ Thị I"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/15.1.jpg?alt=media&token=d4606aa6-dc7a-4a96-8b65-db408d9d3d6e") },
-	{ _T("Lý Văn K"), _T("https://firebasestorage.googleapis.com/v0/b/nguyen-dang.appspot.com/o/16.1.jpg?alt=media&token=43621ce1-5045-42e8-bbef-e165500d8f7c") }
-};
-*/
 
 IMPLEMENT_DYNAMIC(FriendsList, CDialogEx)
 
@@ -234,7 +132,11 @@ BOOL FriendsList::OnInitDialog()
 
 	m_listFriend.MoveWindow(leftList, topList, widthList, heightList);
 
-	m_listFriend.ModifyStyle(LVS_TYPEMASK, LVS_REPORT);
+	//m_listFriend.ModifyStyle(LVS_TYPEMASK, LVS_REPORT);
+	//m_listFriend.SetExtendedStyle(LVS_EX_FULLROWSELECT);
+
+	m_listFriend.ModifyStyle(LVS_SORTASCENDING | LVS_SORTDESCENDING, LVS_OWNERDRAWFIXED | LVS_REPORT);
+	m_listFriend.InsertColumn(0, _T(""), LVCFMT_LEFT, 600);
 	m_listFriend.SetExtendedStyle(LVS_EX_FULLROWSELECT);
 
 	CImageList imageList;
@@ -243,27 +145,16 @@ BOOL FriendsList::OnInitDialog()
 
 //========handling get list friends by token========
 	vector<FriendInfo> friends;
-	string token = "YOUR_TOKEN_HERE";
 	string error;
 
-	/*if (GetFriendList(token, friends, error)) {
-		for (const auto& f : friends) {
-			cout << "Tên: " << f.FullName << ", Avatar: " << f.Avatar << endl;
+	if (GetFriendList(g_accessToken, friends, error)) {
+		for (const auto& friendInfo : friends) {
+			m_listFriend.SetData(friendInfo);
 		}
 	}
 	else {
 		MessageBoxA(nullptr, error.c_str(), "Lỗi", MB_ICONERROR);
-	}*/
-	/*for (size_t i = 0; i < friends.size(); ++i)
-	{
-		CString fileName;
-		fileName.Format(_T("avatar\\friend_%d.png"), (int)i);
-
-		// Tải ảnh từ URL về file local
-		HRESULT hr = URLDownloadToFile(NULL, friends[i].avatarPath, fileName, 0, NULL);
-		m_listFriend.SetData(fileName, friends[i].name);
-	}*/
-
+	}
 	//==========set title for list control========
 	CRect rectNameList;
 	m_stNameListFriend.GetWindowRect(&rectNameList);
@@ -305,6 +196,87 @@ void FriendsList::OnDestroy()
 
 	// Giải phóng GDI+
 	GdiplusShutdown(m_gdiplusToken);
+}
+
+// Callback để nhận dữ liệu từ libcurl
+static size_t WriteCallback(void* contents, size_t size, size_t nmemb, string* userp) {
+	size_t totalSize = size * nmemb;
+	userp->append((char*)contents, totalSize);
+	return totalSize;
+}
+
+CString Utf8ToCString(const std::string& utf8Str) {
+	int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8Str.c_str(), -1, NULL, 0);
+	wchar_t* wstr = new wchar_t[wlen];
+	MultiByteToWideChar(CP_UTF8, 0, utf8Str.c_str(), -1, wstr, wlen);
+	CString result(wstr);
+	delete[] wstr;
+	return result;
+}
+
+bool FriendsList::GetFriendList(const string& token, vector<FriendInfo>& friends, string& errorMessage)
+{
+	CURL* curl;
+	CURLcode res;
+	string readBuffer;
+
+	curl = curl_easy_init();
+	if (!curl) {
+		errorMessage = "Không thể khởi tạo CURL";
+		return false;
+	}
+
+	struct curl_slist* headers = nullptr;
+	string authHeader = "Authorization: Bearer " + token;
+	headers = curl_slist_append(headers, authHeader.c_str());
+
+	curl_easy_setopt(curl, CURLOPT_URL, "http://30.30.30.85:8888/api/message/list-friend");
+	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+	res = curl_easy_perform(curl);
+
+	if (res != CURLE_OK) {
+		errorMessage = string("Lỗi kết nối: ") + curl_easy_strerror(res);
+		curl_easy_cleanup(curl);
+		curl_slist_free_all(headers);
+		return false;
+	}
+
+	try {
+		json response = json::parse(readBuffer);
+		if (response["status"] == 1) {
+			for (const auto& item : response["data"]) {
+				FriendInfo f;
+
+				f.FullName = Utf8ToCString(item.value("FullName", ""));
+				f.FriendID = Utf8ToCString(item.value("FriendID", ""));
+				f.Username = Utf8ToCString(item.value("Username", ""));
+				f.Avatar = Utf8ToCString(item.value("Avatar", ""));
+				f.isOnline = item.value("isOnline", false);
+				f.Content = Utf8ToCString(item.value("Content", ""));
+				f.isSend = item.value("isSend", 0);
+
+				friends.push_back(f);
+			}
+			errorMessage.clear();
+			curl_easy_cleanup(curl);
+			curl_slist_free_all(headers);
+			return true;
+		}
+		else {
+			errorMessage = response.value("message", "Lỗi không xác định");
+		}
+	}
+	catch (const exception& e) {
+		errorMessage = string("Lỗi phân tích JSON: ") + e.what();
+	}
+
+	curl_easy_cleanup(curl);
+	curl_slist_free_all(headers);
+	return false;
 }
 
 HBRUSH FriendsList::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
