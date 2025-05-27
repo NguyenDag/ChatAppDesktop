@@ -8,6 +8,7 @@
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
 #include "Globals.h"
+#include "MessageItem.h"
 
 using json = nlohmann::json;
 using namespace std;
@@ -211,7 +212,7 @@ void Login::OnBnClickedLogin()
 
 	//ShowWindow(SW_HIDE); // ẩn trang login
 	//EndDialog;
-	FriendsList friendsList;
+	MessageItem friendsList;
 	friendsList.DoModal();
 	return;
 }

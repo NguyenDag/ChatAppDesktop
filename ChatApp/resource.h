@@ -10,6 +10,7 @@
 #define IDD_LOGIN_DIALOG                129
 #define IDD_REGISTER_DIALOG             130
 #define IDD_FRIENDSLIST_DIALOG          134
+#define IDD_CHAT_DIALOG                 136
 #define IDC_INPUT_USERNAME              1001
 #define IDC_INPUT_PASSWORD              1002
 #define IDC_BUTTON_LOGIN                1004
@@ -31,14 +32,16 @@
 #define IDC_STATIC_FULLNAME             1023
 #define IDC_LIST3                       1027
 #define IDC_STATIC_NAME_LIST_FRIEND     1028
+#define IDC_LIST_CHAT                   1030
+#define IDC_LIST2                       1032
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        136
+#define _APS_NEXT_RESOURCE_VALUE        138
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1029
+#define _APS_NEXT_CONTROL_VALUE         1033
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

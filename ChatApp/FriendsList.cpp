@@ -8,6 +8,7 @@
 #include <curl/curl.h>
 #include <iostream>
 #include "Globals.h"
+#include "Util.h"
 
 #pragma comment(lib, "urlmon.lib")
 #pragma comment(lib, "gdiplus.lib")
@@ -132,9 +133,6 @@ BOOL FriendsList::OnInitDialog()
 
 	m_listFriend.MoveWindow(leftList, topList, widthList, heightList);
 
-	//m_listFriend.ModifyStyle(LVS_TYPEMASK, LVS_REPORT);
-	//m_listFriend.SetExtendedStyle(LVS_EX_FULLROWSELECT);
-
 	m_listFriend.ModifyStyle(LVS_SORTASCENDING | LVS_SORTDESCENDING, LVS_OWNERDRAWFIXED | LVS_REPORT);
 	m_listFriend.InsertColumn(0, _T(""), LVCFMT_LEFT, 600);
 	m_listFriend.SetExtendedStyle(LVS_EX_FULLROWSELECT);
@@ -196,22 +194,6 @@ void FriendsList::OnDestroy()
 
 	// Giải phóng GDI+
 	GdiplusShutdown(m_gdiplusToken);
-}
-
-// Callback để nhận dữ liệu từ libcurl
-static size_t WriteCallback(void* contents, size_t size, size_t nmemb, string* userp) {
-	size_t totalSize = size * nmemb;
-	userp->append((char*)contents, totalSize);
-	return totalSize;
-}
-
-CString Utf8ToCString(const std::string& utf8Str) {
-	int wlen = MultiByteToWideChar(CP_UTF8, 0, utf8Str.c_str(), -1, NULL, 0);
-	wchar_t* wstr = new wchar_t[wlen];
-	MultiByteToWideChar(CP_UTF8, 0, utf8Str.c_str(), -1, wstr, wlen);
-	CString result(wstr);
-	delete[] wstr;
-	return result;
 }
 
 bool FriendsList::GetFriendList(const string& token, vector<FriendInfo>& friends, string& errorMessage)
