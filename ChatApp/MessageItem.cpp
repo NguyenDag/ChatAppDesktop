@@ -17,35 +17,11 @@ using namespace std;
 
 IMPLEMENT_DYNAMIC(MessageItem, CDialogEx)
 
-MessageItem::MessageItem(CWnd* pParent /*=nullptr*/)
+MessageItem::MessageItem(const CString& friendId, const CString& fullname, CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_CHAT_DIALOG, pParent)
 {
-
-}
-
-void MessageItem::CreateSampleMessages(vector<Message>* messages)
-{
-	for (int i = 0; i < 50; ++i)
-	{
-		CString id;
-		id.Format(_T("msg_%d"), i + 1);
-
-		CString content;
-		content.Format(_T("Đây là tin nhắn mẫu số Đây là tin nhắn mẫu số %d"), i + 1);
-
-		std::vector<CString> files;
-		if (i == 3) files.push_back(_T("example.pdf"));
-		if (i == 7) files.push_back(_T("document.docx"));
-
-		std::vector<CString> images;
-		if (i == 2 || i == 6) images.push_back(_T("image_sample.jpg"));
-
-		int isSend = (i % 2 == 0) ? 1 : 0;
-		CTime createdAt = CTime::GetCurrentTime() - CTimeSpan(0, 0, i * 2, 0);
-		int messageType = 0;
-
-		messages->emplace_back(id, content, files, images, isSend, createdAt, messageType);
-	}
+	m_friendId = friendId;
+	m_friendName = fullname;
 }
 
 MessageItem::~MessageItem()
@@ -56,12 +32,14 @@ void MessageItem::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	//DDX_Control(pDX, IDC_LIST_CHAT, m_listChat);
+	DDX_Control(pDX, IDC_EDIT_SEARCH, m_editSearch);
 }
 
 BOOL MessageItem::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
+	SetWindowText(m_friendName);
 	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR gdiplusToken;
 	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
@@ -94,8 +72,9 @@ BOOL MessageItem::OnInitDialog()
 	m_messageList.Create(WS_CHILD | WS_VISIBLE | WS_VSCROLL, msgRect, this, 1001);
 	std::vector<Message> messages;
 	std::string errorMessage;
+	std::string friendIdStr = CT2A(m_friendId);
 
-	if (GetMessages(g_accessToken, messages, errorMessage)) {
+	if (GetMessages(g_accessToken, messages, errorMessage, friendIdStr)) {
 		for (const auto& msg : messages) {
 			m_messageList.AddMessage(
 				msg.GetId(),
@@ -111,22 +90,17 @@ BOOL MessageItem::OnInitDialog()
 	else {
 		AfxMessageBox(CA2W(errorMessage.c_str()));
 	}
-	// Gửi một vài tin nhắn test
-	/*m_messageList.AddMessage(_T("1"), _T("Xin chào!"), {}, {}, 0, CTime::GetCurrentTime(), 0);
-	m_messageList.AddMessage(_T("2"), _T("Chào bạn! Đây là một tin nhắn dài dài dài để test xem word wrap hoạt động không."), {}, {}, 1, CTime::GetCurrentTime(), 0);
-	m_messageList.AddMessage(_T("2"), _T("Chào bạn! Đây là một tin nhắn dài dài dài để test xem word wrap hoạt động không. Chào bạn! Đây là một tin nhắn dài dài dài để test xem word wrap hoạt động không"), {}, {}, 1, CTime::GetCurrentTime(), 0);
-	m_messageList.AddMessage(_T("1"), _T("The dialog includes working send functionality - you can type messages and they'll appear as blue bubbles on the right side. The emoji, attachment, and image buttons show placeholder dialogs that you can extend with actual functionality. The dialog includes working send functionality - you can type messages and they'll appear as blue bubbles on the right side. The emoji, attachment, and image buttons show placeholder dialogs that you can extend with actual functionality."), {}, {}, 0, CTime::GetCurrentTime(), 0);
-	m_messageList.AddMessage(_T("2"), _T("Chào bạn! Đây là một tin nhắn dài dài dài để test xem word wrap hoạt động không."), {}, {}, 0, CTime::GetCurrentTime(), 0);
-	m_messageList.AddMessage(_T("1"), _T("Chào bạn! Đây là một tin nhắn dài dài dài để test xem word wrap hoạt động không."), {}, {}, 1, CTime::GetCurrentTime(), 0);
-	m_messageList.AddMessage(_T("2"), _T("Chào bạn! Đây là một tin nhắn dài dài dài để test xem word wrap hoạt động không."), {}, {}, 1, CTime::GetCurrentTime(), 0);
-	m_messageList.AddMessage(_T("1"), _T("Chào bạn! Đây là một tin nhắn dài dài dài để test xem word wrap hoạt động không."), {}, {}, 1, CTime::GetCurrentTime(), 0);
-	m_messageList.AddMessage(_T("1"), _T("Chào bạn! Đây là một tin nhắn dài dài dài để test xem word wrap hoạt động không."), {}, {}, 0, CTime::GetCurrentTime(), 0);
-	m_messageList.AddMessage(_T("2"), _T("Chào bạn! Đây là một tin nhắn dài dài dài để test xem word wrap hoạt động không."), {}, {}, 0, CTime::GetCurrentTime(), 0);
-	m_messageList.AddMessage(_T("1"), _T("Chào bạn! Đây là một tin nhắn dài dài dài để test xem word wrap hoạt động không."), {}, {}, 1, CTime::GetCurrentTime(), 0);
-	m_messageList.AddMessage(_T("2"), _T("Chào bạn! Đây là một tin nhắn dài dài dài để test xem word wrap hoạt động không."), {}, {}, 1, CTime::GetCurrentTime(), 0);
-	m_messageList.AddMessage(_T("2"), _T("Chào bạn! Đây là một tin nhắn dài dài dài để test xem word wrap hoạt động không."), {}, {}, 0, CTime::GetCurrentTime(), 0);
-	m_messageList.AddMessage(_T("2"), _T("Chào bạn! Đây là một tin nhắn dài dài dài để test xem word wrap hoạt động không."), {}, {}, 0, CTime::GetCurrentTime(), 0);*/
+//===========set Search bar=============
+	CRect rectSearch;
+	m_editSearch.GetWindowRect(&rectSearch);// lấy tọa độ màn hình
+	ScreenToClient(&rectSearch);// chuyển về tọa độ client
 
+	int left = rectSearch.left;
+	int top = rectSearch.top;
+	int width = 270;
+	int height = rectSearch.Height();
+
+	m_editSearch.MoveWindow(left, top, width, height);
 	return TRUE;
 }
 
@@ -140,7 +114,7 @@ void MessageItem::OnSize(UINT nType, int cx, int cy)
 	}
 }
 
-bool MessageItem::GetMessages(const string& token, vector<Message>& message, string& errorMessage)
+bool MessageItem::GetMessages(const string& token, vector<Message>& message, string& errorMessage, const string& friendId)
 {
 	CURL* curl;
 	CURLcode res;
@@ -156,7 +130,8 @@ bool MessageItem::GetMessages(const string& token, vector<Message>& message, str
 	string authHeader = "Authorization: Bearer " + token;
 	headers = curl_slist_append(headers, authHeader.c_str());
 
-	curl_easy_setopt(curl, CURLOPT_URL, "http://30.30.30.85:8888/api/message/get-message?FriendID=682d7fdbce77700d5a735b11");
+	std::string url = "http://30.30.30.85:8888/api/message/get-message?FriendID=" + friendId;
+	curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
 	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
@@ -200,6 +175,3 @@ bool MessageItem::GetMessages(const string& token, vector<Message>& message, str
 BEGIN_MESSAGE_MAP(MessageItem, CDialogEx)
 	ON_WM_SIZE()
 END_MESSAGE_MAP()
-
-
-// MessageItem message handlers

@@ -20,11 +20,12 @@ public:
 #endif
 
 protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
+	virtual void DoDataExchange(CDataExchange* pDX);
 	virtual BOOL OnInitDialog();
 	virtual void OnPaint();
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	afx_msg void OnDestroy(); // để shutdown GDI+
+	afx_msg void OnNMClickListFriend(NMHDR* pNMHDR, LRESULT* pResult);
 	bool GetFriendList(const string& token, vector<FriendInfo>& friends, string& errorMessage);
 
 	DECLARE_MESSAGE_MAP()

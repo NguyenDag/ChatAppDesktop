@@ -9,6 +9,7 @@
 #include <iostream>
 #include "Globals.h"
 #include "Util.h"
+#include "MessageItem.h"
 
 #pragma comment(lib, "urlmon.lib")
 #pragma comment(lib, "gdiplus.lib")
@@ -196,6 +197,27 @@ void FriendsList::OnDestroy()
 	GdiplusShutdown(m_gdiplusToken);
 }
 
+void FriendsList::OnNMClickListFriend(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	LPNMITEMACTIVATE pNMItemActivate = reinterpret_cast<LPNMITEMACTIVATE>(pNMHDR);
+	int nItem = pNMItemActivate->iItem;
+
+	if (nItem >= 0) {
+		const FriendInfo* pFriend = m_listFriend.GetFriendInfoAt(nItem);
+		if (pFriend) {
+			CString friendId = pFriend->FriendID;
+			CString fullname = pFriend->FullName;
+
+			// Mở dialog chat
+			MessageItem* pChatDlg = new MessageItem(friendId, fullname);
+			pChatDlg->Create(IDD_CHAT_DIALOG, this);
+			pChatDlg->ShowWindow(SW_SHOW);
+		}
+	}
+
+	*pResult = 0;
+}
+
 bool FriendsList::GetFriendList(const string& token, vector<FriendInfo>& friends, string& errorMessage)
 {
 	CURL* curl;
@@ -292,5 +314,6 @@ HBRUSH FriendsList::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 BEGIN_MESSAGE_MAP(FriendsList, CDialogEx)
 	ON_WM_CTLCOLOR()
 	ON_WM_PAINT()
+	ON_NOTIFY(NM_CLICK, IDC_LIST_FRIEND, &FriendsList::OnNMClickListFriend)
 END_MESSAGE_MAP()
 

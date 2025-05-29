@@ -10,8 +10,8 @@ class MessageItem : public CDialogEx
 	DECLARE_DYNAMIC(MessageItem)
 
 public:
-	MessageItem(CWnd* pParent = nullptr);   // standard constructor
-	void CreateSampleMessages(vector<Message>* messages);
+	MessageItem(const CString& friendId, const CString& fullname, CWnd* pParent = nullptr);   // standard constructor
+	//void CreateSampleMessages(vector<Message>* messages);
 	virtual ~MessageItem();
 
 // Dialog Data
@@ -27,8 +27,12 @@ protected:
 private:
 	//MessageItemStyle m_listChat;
 	MessageItemStyle m_messageList;
+	CString m_friendId;
+	CString m_friendName;
 public:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
-	bool GetMessages(const string& token, vector<Message>& message, string& errorMessage);
+	bool GetMessages(const string& token, vector<Message>& message, string& errorMessage, const string& friendId);
 	//afx_msg void OnBnClickedSend(); // Button gửi
+private:
+	CEdit m_editSearch;
 };

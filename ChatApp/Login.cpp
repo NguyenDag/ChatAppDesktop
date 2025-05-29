@@ -212,7 +212,7 @@ void Login::OnBnClickedLogin()
 
 	//ShowWindow(SW_HIDE); // ẩn trang login
 	//EndDialog;
-	MessageItem friendsList;
+	FriendsList friendsList;
 	friendsList.DoModal();
 	return;
 }

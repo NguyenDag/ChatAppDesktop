@@ -26,6 +26,7 @@
 #define IDC_STATIC_REGISTER             1015
 #define IDC_EDIT1                       1015
 #define IDC_INPUT_SEARCH                1015
+#define IDC_EDIT_SEARCH                 1015
 #define IDC_STATIC_CONFIRMPASSWORD      1018
 #define IDC_LIST_FRIEND                 1021
 #define IDC_AVATAR                      1022
@@ -33,7 +34,6 @@
 #define IDC_LIST3                       1027
 #define IDC_STATIC_NAME_LIST_FRIEND     1028
 #define IDC_LIST_CHAT                   1030
-#define IDC_LIST2                       1032
 
 // Next default values for new objects
 // 

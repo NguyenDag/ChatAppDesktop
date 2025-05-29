@@ -78,8 +78,8 @@ private:
     void InitializeBrushes();
 
     // Helper methods for message types
-    bool IsOutgoingMessage(const Message& msg) const { return msg.GetIsSend() == 1; }
-    bool IsIncomingMessage(const Message& msg) const { return msg.GetIsSend() == 0; }
+    bool IsOutgoingMessage(const Message& msg) const { return msg.GetMessageType() == 1; }
+    bool IsIncomingMessage(const Message& msg) const { return msg.GetMessageType() == 0; }
     bool HasFiles(const Message& msg) const { return !msg.GetFiles().empty(); }
     bool HasImages(const Message& msg) const { return !msg.GetImages().empty(); }
 };

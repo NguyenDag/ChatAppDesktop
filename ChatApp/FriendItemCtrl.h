@@ -27,6 +27,7 @@ public:
     static void DrawCircleAvatar(Graphics& graphics, Image* pImage, const CRect& rect);
     void SetData(const FriendInfo& f);
     void ClearFriends();
+    const FriendInfo* GetFriendInfoAt(int index) const;
 
 protected:
     afx_msg void DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct); // Owner draw

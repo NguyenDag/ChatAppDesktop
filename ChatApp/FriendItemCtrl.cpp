@@ -45,6 +45,14 @@ void CFriendItemCtrl::ClearFriends()
     DeleteAllItems();
 }
 
+const FriendInfo* CFriendItemCtrl::GetFriendInfoAt(int index) const
+{
+    if (index >= 0 && index < friends.size()) {
+        return &friends[index];
+    }
+    return nullptr;
+}
+
 void CFriendItemCtrl::DrawCircleAvatar(Graphics& graphics, Image* pImage, const CRect& rect)
 {
     if (!pImage) return;
