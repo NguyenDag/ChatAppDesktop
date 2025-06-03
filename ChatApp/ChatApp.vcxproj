@@ -191,6 +191,7 @@
   <ItemGroup>
     <ClInclude Include="ChatApp.h" />
     <ClInclude Include="ChatAppDlg.h" />
+    <ClInclude Include="CImageButton.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="FriendItemCtrl.h" />
     <ClInclude Include="FriendsList.h" />
@@ -208,6 +209,7 @@
   <ItemGroup>
     <ClCompile Include="ChatApp.cpp" />
     <ClCompile Include="ChatAppDlg.cpp" />
+    <ClCompile Include="CImageButton.cpp" />
     <ClCompile Include="FriendItemCtrl.cpp" />
     <ClCompile Include="FriendsList.cpp" />
     <ClCompile Include="Globals.cpp" />
@@ -232,8 +234,17 @@
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="..\..\..\Downloads\Attach.ico" />
+    <Image Include="..\..\..\Downloads\emoji.ico" />
+    <Image Include="..\..\..\Downloads\Image_1.ico" />
+    <Image Include="..\..\..\Downloads\Polygon-11-_1_.ico" />
     <Image Include="C:\Users\admin\OneDrive\Hình ảnh\Ảnh chụp màn hình\1_cute.jpg" />
+    <Image Include="res\Attach.png" />
     <Image Include="res\ChatApp.ico" />
+    <Image Include="res\icon2.ico" />
+    <Image Include="res\icon3.ico" />
+    <Image Include="res\Image.png" />
+    <Image Include="res\LOL.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

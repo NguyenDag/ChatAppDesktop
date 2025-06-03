@@ -31,9 +31,27 @@ MessageItem::~MessageItem()
 void MessageItem::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
-	//DDX_Control(pDX, IDC_LIST_CHAT, m_listChat);
 	DDX_Control(pDX, IDC_EDIT_SEARCH, m_editSearch);
+	DDX_Control(pDX, IDC_BTN_SEND, m_btnSend);
+	DDX_Control(pDX, IDC_BTN_IMAGE, m_btnImage);
+	DDX_Control(pDX, IDC_BTN_FILE, m_btnFile);
+	DDX_Control(pDX, IDC_BTN_EMOJI, m_btnEmoji);
 }
+
+
+CString GetAbsolutePath(LPCTSTR relativePath)
+{
+	CString fullPath;
+	GetModuleFileName(NULL, fullPath.GetBuffer(MAX_PATH), MAX_PATH);
+	fullPath.ReleaseBuffer();
+	int pos = fullPath.ReverseFind('\\');
+	if (pos != -1) {
+		fullPath = fullPath.Left(pos + 1) + relativePath;
+	}
+	return fullPath;
+}
+
+ULONG_PTR gdiplusToken;
 
 BOOL MessageItem::OnInitDialog()
 {
@@ -41,7 +59,6 @@ BOOL MessageItem::OnInitDialog()
 
 	SetWindowText(m_friendName);
 	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-	ULONG_PTR gdiplusToken;
 	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
 	// Lưu token lại để gọi GdiplusShutdown(gdiplusToken) khi thoát ứng dụng
@@ -63,7 +80,7 @@ BOOL MessageItem::OnInitDialog()
 	int dlgTop = screenRect.top + (screenHeight - dlgHeight) / 2;
 
 	MoveWindow(dlgLeft, dlgTop, dlgWidth, dlgHeight);
-//========set for list control===========
+	//========set for list control===========
 	CRect clientRect;
 	GetClientRect(&clientRect);
 
@@ -90,18 +107,83 @@ BOOL MessageItem::OnInitDialog()
 	else {
 		AfxMessageBox(CA2W(errorMessage.c_str()));
 	}
-//===========set Search bar=============
+	//===========set Search bar=============
 	CRect rectSearch;
 	m_editSearch.GetWindowRect(&rectSearch);// lấy tọa độ màn hình
 	ScreenToClient(&rectSearch);// chuyển về tọa độ client
 
-	int left = rectSearch.left;
-	int top = rectSearch.top;
-	int width = 270;
-	int height = rectSearch.Height();
+	int left = 10;
+	int top = clientRect.Height() - 50;
+	int width = clientRect.Width() * 0.8;
+	int height = 42;
 
 	m_editSearch.MoveWindow(left, top, width, height);
+
+	//===========load PNG len static icon===========
+	int buttonSize = 42;
+	int buttonSpacing = 5;
+	int startX = clientRect.Width() - (4 * buttonSize + 3 * buttonSpacing + 10);
+	int buttonY = clientRect.Height() - 50;
+
+	// Move và resize các button
+	m_btnSend.MoveWindow(startX, buttonY, buttonSize, buttonSize);
+	m_btnEmoji.MoveWindow(startX + buttonSize + buttonSpacing, buttonY, buttonSize, buttonSize);
+	m_btnImage.MoveWindow(startX + 2 * (buttonSize + buttonSpacing), buttonY, buttonSize, buttonSize);
+	m_btnFile.MoveWindow(startX + 3 * (buttonSize + buttonSpacing), buttonY, buttonSize, buttonSize);
+
+	setIconButton(m_btnSend, AfxGetApp()->LoadIcon(IDI_ICON_SEND));
+	setIconButton(m_btnImage, AfxGetApp()->LoadIcon(IDI_ICON_IMAGE));
+	setIconButton(m_btnFile, AfxGetApp()->LoadIcon(IDI_ICON_ATTACH));
+	setIconButton(m_btnEmoji, AfxGetApp()->LoadIcon(IDI_ICON_EMOJI));
 	return TRUE;
+}
+
+void MessageItem::OnDestroy()
+{
+	CDialogEx::OnDestroy();
+	Gdiplus::GdiplusShutdown(gdiplusToken);
+}
+
+void MessageItem::OnPaint()
+{
+	CPaintDC dc(this);
+	CRect rect;
+	GetClientRect(&rect);
+
+	CBrush brush(RGB(240, 240, 240));
+	dc.FillRect(&rect, &brush);
+}
+
+HBRUSH MessageItem::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
+{
+	HBRUSH hbr = CDialogEx::OnCtlColor(pDC, pWnd, nCtlColor);
+
+	if (nCtlColor == CTLCOLOR_EDIT)
+	{
+		pDC->SetBkColor(RGB(255, 255, 255));
+		return (HBRUSH)GetStockObject(WHITE_BRUSH);
+	}
+
+	if (nCtlColor == CTLCOLOR_STATIC)
+	{
+		pDC->SetBkColor(RGB(240, 240, 240));
+		pDC->SetTextColor(RGB(0, 0, 0));
+		return (HBRUSH)m_hbrBackground;
+	}
+
+	if (pWnd == &m_messageList)
+	{
+		pDC->SetBkColor(RGB(240, 240, 240));
+		return (HBRUSH)m_hbrBackground;
+	}
+
+	return hbr;
+}
+
+void MessageItem::LoadButtonImage(CImageButton& button, LPCTSTR imagePath)
+{
+	CString fullPath = GetAbsolutePath(imagePath);
+	button.LoadImageFromFile(fullPath);
 }
 
 void MessageItem::OnSize(UINT nType, int cx, int cy)
@@ -170,6 +252,18 @@ bool MessageItem::GetMessages(const string& token, vector<Message>& message, str
 	curl_easy_cleanup(curl);
 	curl_slist_free_all(headers);
 	return false;
+}
+
+void MessageItem::setIconButton(CMFCButton& _idc_button, HICON hicon)
+{
+	_idc_button.SetIcon(hicon);
+	_idc_button.SizeToContent();
+	_idc_button.m_bDrawFocus = FALSE;
+	_idc_button.m_bTransparent = TRUE;
+	_idc_button.m_nFlatStyle = CMFCButton::BUTTONSTYLE_NOBORDERS;
+	_idc_button.SetFaceColor(RGB(240, 240, 240), TRUE);
+	_idc_button.SetTextColor(RGB(100, 100, 100));
+	_idc_button.SetWindowPos(nullptr, 0, 0, 40, 40, SWP_NOMOVE | SWP_NOZORDER);
 }
 
 BEGIN_MESSAGE_MAP(MessageItem, CDialogEx)

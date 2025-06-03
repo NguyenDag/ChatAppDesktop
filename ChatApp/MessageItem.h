@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "afxdialogex.h"
 #include "MessageItemStyle.h"
-
+#include "CImageButton.h"
 
 // MessageItem dialog
 
@@ -22,17 +22,26 @@ public:
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
 	virtual BOOL OnInitDialog();
-
+	afx_msg void OnDestroy();
+	afx_msg void OnPaint();
+	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
+	void LoadButtonImage(CImageButton& button, LPCTSTR imagePath);
 	DECLARE_MESSAGE_MAP()
 private:
 	//MessageItemStyle m_listChat;
 	MessageItemStyle m_messageList;
 	CString m_friendId;
 	CString m_friendName;
+
+	CEdit m_editSearch;
+	CBrush m_hbrBackground;
 public:
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	bool GetMessages(const string& token, vector<Message>& message, string& errorMessage, const string& friendId);
-	//afx_msg void OnBnClickedSend(); // Button gửi
+	void setIconButton(CMFCButton& _idc_button, HICON hicon);
 private:
-	CEdit m_editSearch;
+	CMFCButton m_btnSend;
+	CMFCButton m_btnImage;
+	CMFCButton m_btnFile;
+	CMFCButton m_btnEmoji;
 };
