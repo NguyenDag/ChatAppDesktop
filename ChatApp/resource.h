@@ -16,7 +16,6 @@
 #define IDI_ICON_EMOJI                  144
 #define IDI_ICON_IMAGE                  145
 #define IDI_ICON_ATTACH                 146
-#define IDI_ICON2                       147
 #define IDI_ICON_SEND                   147
 #define IDC_INPUT_USERNAME              1001
 #define IDC_INPUT_PASSWORD              1002

@@ -87,26 +87,8 @@ BOOL MessageItem::OnInitDialog()
 	// Vùng hiển thị message list
 	CRect msgRect(10, 10, clientRect.Width() - 10, clientRect.Height() - 60);
 	m_messageList.Create(WS_CHILD | WS_VISIBLE | WS_VSCROLL, msgRect, this, 1001);
-	std::vector<Message> messages;
-	std::string errorMessage;
-	std::string friendIdStr = CT2A(m_friendId);
+	LoadMessages();
 
-	if (GetMessages(g_accessToken, messages, errorMessage, friendIdStr)) {
-		for (const auto& msg : messages) {
-			m_messageList.AddMessage(
-				msg.GetId(),
-				msg.GetContent(),
-				msg.GetFiles(),
-				msg.GetImages(),
-				msg.GetIsSend(),
-				msg.GetCreatedAt(),
-				msg.GetMessageType()
-			);
-		}
-	}
-	else {
-		AfxMessageBox(CA2W(errorMessage.c_str()));
-	}
 	//===========set Search bar=============
 	CRect rectSearch;
 	m_editSearch.GetWindowRect(&rectSearch);// lấy tọa độ màn hình
@@ -186,6 +168,115 @@ void MessageItem::LoadButtonImage(CImageButton& button, LPCTSTR imagePath)
 	button.LoadImageFromFile(fullPath);
 }
 
+bool MessageItem::SendMessageToFriend(const std::string& token, const std::string& friendID, const std::string& content, const std::vector<std::string>& files, std::string& errorMessage)
+{
+	CURL* curl = nullptr;
+	CURLcode res = CURLE_OK;
+	std::string response_str;
+	long http_code = 0;
+	curl_mime* mime = nullptr;
+	struct curl_slist* headers = nullptr;
+	nlohmann::json response;
+
+	try {
+		curl = curl_easy_init();
+		if (!curl) {
+			errorMessage = "Không thể khởi tạo CURL";
+			return false;
+		}
+
+		mime = curl_mime_init(curl);
+		if (!mime) {
+			errorMessage = "Không thể khởi tạo curl_mime";
+			curl_easy_cleanup(curl);
+			return false;
+		}
+
+		// URL
+		std::string url = "http://30.30.30.85:8888/api/message/send-message";
+
+		// Header Authorization
+		std::string authHeader = "Authorization: Bearer " + token;
+		headers = curl_slist_append(headers, authHeader.c_str());
+
+		// FriendID
+		curl_mimepart* part = curl_mime_addpart(mime);
+		curl_mime_name(part, "FriendID");
+		curl_mime_data(part, friendID.c_str(), CURL_ZERO_TERMINATED);
+
+		// Content (nếu không rỗng)
+		if (!content.empty()) {
+			part = curl_mime_addpart(mime);
+			curl_mime_name(part, "Content");
+			curl_mime_data(part, content.c_str(), CURL_ZERO_TERMINATED);
+		}
+
+		// Files
+		for (const auto& filePath : files) {
+			if (!filePath.empty()) {
+				part = curl_mime_addpart(mime);
+				curl_mime_name(part, "files");
+				curl_mime_filedata(part, filePath.c_str());
+			}
+		}
+
+		// Cấu hình CURL
+		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+		curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
+		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response_str);
+
+		res = curl_easy_perform(curl);
+		if (res != CURLE_OK) {
+			throw std::runtime_error(curl_easy_strerror(res));
+		}
+
+		curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+		if (http_code != 200) {
+			if (!response_str.empty()) {
+				response = nlohmann::json::parse(response_str, nullptr, false);
+				if (!response.is_discarded() && response.contains("message") && response["message"].is_string())
+					throw std::runtime_error(response["message"].get<std::string>());
+				else
+					throw std::runtime_error("Lỗi HTTP " + std::to_string(http_code));
+			}
+			else {
+				throw std::runtime_error("Lỗi HTTP " + std::to_string(http_code));
+			}
+		}
+
+		// Phân tích JSON trả về
+		response = nlohmann::json::parse(response_str, nullptr, false);
+		if (response.is_discarded()) {
+			throw std::runtime_error("Không thể phân tích JSON phản hồi");
+		}
+		// Kiểm tra status trong response
+		int status = response.value("status", 0);
+		if (status != 1) {
+			std::string msg = response.value("message", "Gửi tin nhắn thất bại.");
+			throw std::runtime_error(msg);
+		}
+
+		// Giải phóng tài nguyên
+		curl_slist_free_all(headers);
+		curl_mime_free(mime);
+		curl_easy_cleanup(curl);
+
+		errorMessage.clear();
+		return true;
+	}
+	catch (const std::exception& e) {
+		errorMessage = e.what();
+
+		if (headers) curl_slist_free_all(headers);
+		if (mime) curl_mime_free(mime);
+		if (curl) curl_easy_cleanup(curl);
+
+		return false;
+	}
+}
+
 void MessageItem::OnSize(UINT nType, int cx, int cy)
 {
 	CDialogEx::OnSize(nType, cx, cy);
@@ -254,6 +345,30 @@ bool MessageItem::GetMessages(const string& token, vector<Message>& message, str
 	return false;
 }
 
+void MessageItem::LoadMessages()
+{
+	std::vector<Message> messages;
+	std::string errorMessage;
+	std::string friendIdStr = CT2A(m_friendId);
+
+	if (GetMessages(g_accessToken, messages, errorMessage, friendIdStr)) {
+		for (const auto& msg : messages) {
+			m_messageList.AddMessage(
+				msg.GetId(),
+				msg.GetContent(),
+				msg.GetFiles(),
+				msg.GetImages(),
+				msg.GetIsSend(),
+				msg.GetCreatedAt(),
+				msg.GetMessageType()
+			);
+		}
+	}
+	else {
+		AfxMessageBox(CA2W(errorMessage.c_str()));
+	}
+}
+
 void MessageItem::setIconButton(CMFCButton& _idc_button, HICON hicon)
 {
 	_idc_button.SetIcon(hicon);
@@ -268,4 +383,46 @@ void MessageItem::setIconButton(CMFCButton& _idc_button, HICON hicon)
 
 BEGIN_MESSAGE_MAP(MessageItem, CDialogEx)
 	ON_WM_SIZE()
+	ON_BN_CLICKED(IDC_BTN_SEND, &MessageItem::OnBnClickedBtnSend)
+	ON_BN_CLICKED(IDC_BTN_IMAGE, &MessageItem::OnBnClickedBtnImage)
+	ON_BN_CLICKED(IDC_BTN_FILE, &MessageItem::OnBnClickedBtnFile)
+	ON_BN_CLICKED(IDC_BTN_EMOJI, &MessageItem::OnBnClickedBtnEmoji)
 END_MESSAGE_MAP()
+
+void MessageItem::OnBnClickedBtnSend()
+{
+	CString messageText;
+	m_editSearch.GetWindowTextW(messageText);
+
+	if (messageText.IsEmpty()) {
+		MessageBox(_T("Vui lòng nhập nội dung tin nhắn."), _T("Thông báo"), MB_OK | MB_ICONINFORMATION);
+		return;
+	}
+
+	string content = CT2A(messageText);
+	string token = g_accessToken;
+	string friendID = CT2A(m_friendId);
+	string errorMessage = "";
+	std::vector<string> files;
+
+	if (SendMessageToFriend(g_accessToken, friendID, content, files, errorMessage)) {
+		m_messageList.ClearMessages();
+		LoadMessages();
+		m_editSearch.SetWindowText(_T(""));
+	}
+}
+
+void MessageItem::OnBnClickedBtnImage()
+{
+	// TODO: Add your control notification handler code here
+}
+
+void MessageItem::OnBnClickedBtnFile()
+{
+	// TODO: Add your control notification handler code here
+}
+
+void MessageItem::OnBnClickedBtnEmoji()
+{
+	// TODO: Add your control notification handler code here
+}

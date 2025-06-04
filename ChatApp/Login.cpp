@@ -174,10 +174,13 @@ HBRUSH Login::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 		pDC->SetBkMode(TRANSPARENT);
 		return m_brushTransparent;
 	}
-	else if (nCtlColor == CTLCOLOR_BTN && id == IDC_CHECK_REMEMBER)
+	if (nCtlColor == CTLCOLOR_BTN)
 	{
-		pDC->SetBkMode(TRANSPARENT);
-		return (HBRUSH)m_brushBackground.GetSafeHandle();
+		if (pWnd->GetDlgCtrlID() == IDC_CHECK_REMEMBER)
+		{
+			pDC->SetBkMode(TRANSPARENT);
+			return (HBRUSH)m_brushBackground.GetSafeHandle();
+		}
 	}
 
 	return hbr;
