@@ -192,26 +192,21 @@ bool MessageItem::SendMessageToFriend(const std::string& token, const std::strin
 			return false;
 		}
 
-		// URL
 		std::string url = "http://30.30.30.85:8888/api/message/send-message";
 
-		// Header Authorization
 		std::string authHeader = "Authorization: Bearer " + token;
 		headers = curl_slist_append(headers, authHeader.c_str());
 
-		// FriendID
 		curl_mimepart* part = curl_mime_addpart(mime);
 		curl_mime_name(part, "FriendID");
 		curl_mime_data(part, friendID.c_str(), CURL_ZERO_TERMINATED);
 
-		// Content (nếu không rỗng)
 		if (!content.empty()) {
 			part = curl_mime_addpart(mime);
 			curl_mime_name(part, "Content");
 			curl_mime_data(part, content.c_str(), CURL_ZERO_TERMINATED);
 		}
 
-		// Files
 		for (const auto& filePath : files) {
 			if (!filePath.empty()) {
 				part = curl_mime_addpart(mime);
@@ -220,7 +215,6 @@ bool MessageItem::SendMessageToFriend(const std::string& token, const std::strin
 			}
 		}
 
-		// Cấu hình CURL
 		curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 		curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
 		curl_easy_setopt(curl, CURLOPT_MIMEPOST, mime);
@@ -246,19 +240,18 @@ bool MessageItem::SendMessageToFriend(const std::string& token, const std::strin
 			}
 		}
 
-		// Phân tích JSON trả về
+
 		response = nlohmann::json::parse(response_str, nullptr, false);
 		if (response.is_discarded()) {
 			throw std::runtime_error("Không thể phân tích JSON phản hồi");
 		}
-		// Kiểm tra status trong response
+
 		int status = response.value("status", 0);
 		if (status != 1) {
 			std::string msg = response.value("message", "Gửi tin nhắn thất bại.");
 			throw std::runtime_error(msg);
 		}
 
-		// Giải phóng tài nguyên
 		curl_slist_free_all(headers);
 		curl_mime_free(mime);
 		curl_easy_cleanup(curl);
@@ -414,12 +407,81 @@ void MessageItem::OnBnClickedBtnSend()
 
 void MessageItem::OnBnClickedBtnImage()
 {
-	// TODO: Add your control notification handler code here
+	string token = g_accessToken;
+	string friendID = CT2A(m_friendId);
+	string errorMessage;
+	string content;
+	std::vector<string> selectedFiles;
+	CString filter = _T("Image Files (*.bmp; *.jpg; *.jpeg; *.png; *.gif; *.tiff)|*.bmp;*.jpg;*.jpeg;*.png;*.gif;*.tiff|")
+		_T("Bitmap Files (*.bmp)|*.bmp|")
+		_T("JPEG Files (*.jpg;*.jpeg)|*.jpg;*.jpeg|")
+		_T("PNG Files (*.png)|*.png|")
+		_T("GIF Files (*.gif)|*.gif|")
+		_T("TIFF Files (*.tiff)|*.tiff|")
+		_T("All Files (*.*)|*.*||");
+
+	CFileDialog openDlg(TRUE, _T("txt"), NULL,
+		OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT | OFN_FILEMUSTEXIST | OFN_ALLOWMULTISELECT, filter, this);
+
+	if (openDlg.DoModal() == IDOK) {
+		POSITION pos = openDlg.GetStartPosition();
+		if (pos == NULL) {
+			CString cstrPath = openDlg.GetPathName();
+			string filePath = CT2A(cstrPath);
+			selectedFiles.push_back(filePath);
+		}
+		else {
+			while (pos != NULL) {
+				CString cstrPath = openDlg.GetNextPathName(pos);
+				string filePath = CT2A(cstrPath);
+				selectedFiles.push_back(filePath);
+			}
+		}
+
+		if (!selectedFiles.empty()) {
+			if (SendMessageToFriend(g_accessToken, friendID, content, selectedFiles, errorMessage)) {
+				m_messageList.ClearMessages();
+				LoadMessages();
+			}
+		}
+	}
 }
 
 void MessageItem::OnBnClickedBtnFile()
 {
-	// TODO: Add your control notification handler code here
+	string token = g_accessToken;
+	string friendID = CT2A(m_friendId);
+	string errorMessage;
+	string content;
+	std::vector<string> selectedFiles;
+
+	CFileDialog openDlg(TRUE, _T("txt"), NULL,
+		OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT | OFN_FILEMUSTEXIST | OFN_ALLOWMULTISELECT,
+		_T("Text Files (*.txt)|*.txt|Data Files (*.dat)|*.dat|All Files (*.*)|*.*||"),
+		this);
+
+	if (openDlg.DoModal() == IDOK) {
+		POSITION pos = openDlg.GetStartPosition();
+		if (pos == NULL) {
+			CString cstrPath = openDlg.GetPathName();
+			string filePath = CT2A(cstrPath);
+			selectedFiles.push_back(filePath);
+		}
+		else {
+			while (pos != NULL) {
+				CString cstrPath = openDlg.GetNextPathName(pos);
+				string filePath = CT2A(cstrPath);
+				selectedFiles.push_back(filePath);
+			}
+		}
+
+		if (!selectedFiles.empty()) {
+			if (SendMessageToFriend(g_accessToken, friendID, content, selectedFiles, errorMessage)) {
+				m_messageList.ClearMessages();
+				LoadMessages();
+			}
+		}
+	}
 }
 
 void MessageItem::OnBnClickedBtnEmoji()
