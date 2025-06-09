@@ -26,7 +26,7 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	void LoadButtonImage(CImageButton& button, LPCTSTR imagePath);
-	bool SendMessageToFriend(const string& token, const string& friendID, const string& content, const vector<std::string>& files, string& errorMessage);
+	bool SendMessageToFriend(const string& token, const string& friendID, const string& content, const vector<FileItem>& files, string& errorMessage);
 	DECLARE_MESSAGE_MAP()
 private:
 	MessageItemStyle m_messageList;

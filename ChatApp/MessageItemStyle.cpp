@@ -2,9 +2,19 @@
 #include "MessageItemStyle.h"
 #include <gdiplus.h>
 #include <curl/curl.h>
+#include <iostream>
+
+#include <gdiplus.h>
+#include <urlmon.h>
+#pragma comment(lib, "urlmon.lib")
 
 using namespace Gdiplus;
 #pragma comment(lib, "gdiplus.lib")
+
+#include <shlobj.h>  // SHGetFolderPath
+#include <atlstr.h>  // CString
+
+using namespace Gdiplus;
 
 IMPLEMENT_DYNAMIC(MessageItemStyle, CWnd)
 
@@ -28,6 +38,32 @@ BEGIN_MESSAGE_MAP(MessageItemStyle, CWnd)
     ON_WM_VSCROLL()
     ON_WM_MOUSEWHEEL()
 END_MESSAGE_MAP()
+
+Gdiplus::GraphicsPath* CreateRoundRectPath(Gdiplus::Rect rect, int radius)
+{
+    auto path = new Gdiplus::GraphicsPath();
+
+    int diameter = radius * 2;
+    if (diameter <= 0) {
+        path->AddRectangle(rect);
+        return path;
+    }
+    if (diameter > rect.Width) diameter = rect.Width;
+    if (diameter > rect.Height) diameter = rect.Height;
+
+    Gdiplus::Rect arcRectTL(rect.X, rect.Y, diameter, diameter);
+    Gdiplus::Rect arcRectTR(rect.GetRight() - diameter, rect.Y, diameter, diameter);
+    Gdiplus::Rect arcRectBR(rect.GetRight() - diameter, rect.GetBottom() - diameter, diameter, diameter);
+    Gdiplus::Rect arcRectBL(rect.X, rect.GetBottom() - diameter, diameter, diameter);
+
+    path->AddArc(arcRectTL, 180, 90);
+    path->AddArc(arcRectTR, 270, 90);
+    path->AddArc(arcRectBR, 0, 90);
+    path->AddArc(arcRectBL, 90, 90);
+
+    path->CloseFigure();
+    return path;
+}
 
 BOOL MessageItemStyle::Create(DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID)
 {
@@ -64,7 +100,7 @@ void MessageItemStyle::AddMessage(const Message& message)
 }
 
 void MessageItemStyle::AddMessage(const CString& id, const CString& content,
-    const std::vector<CString>& files, const std::vector<CString>& images,
+    const std::vector<FileItem>& files, const std::vector<ImageItem>& images,
     int isSend, const CTime& createdAt, int messageType)
 {
     Message msg(id, content, files, images, isSend, createdAt, messageType);
@@ -247,11 +283,11 @@ void MessageItemStyle::DrawOutgoingMessage(CDC* pDC, const Message& msg, CRect& 
     DrawMessageContent(pDC, msg, bubbleRect);
 
     // Draw timestamp
-    CRect timeRect = rect;
+    /*CRect timeRect = rect;
     timeRect.top = bubbleRect.bottom + 2;
     timeRect.right = bubbleRect.right;
     timeRect.left = bubbleRect.right - 100;
-    DrawTimeStamp(pDC, msg, timeRect, true);
+    DrawTimeStamp(pDC, msg, timeRect, true);*/
 
     // Draw checkmarks
     CRect checkRect;
@@ -378,7 +414,7 @@ void MessageItemStyle::DrawMessageContent(CDC* pDC, const Message& msg, CRect& r
     }
 }
 
-void MessageItemStyle::DrawFiles(CDC* pDC, const std::vector<CString>& files, CRect& rect)
+void MessageItemStyle::DrawFiles(CDC* pDC, const std::vector<FileItem>& files, CRect& rect)
 {
     pDC->SetTextColor(RGB(0, 100, 200));
     CRect fileRect = rect;
@@ -386,22 +422,58 @@ void MessageItemStyle::DrawFiles(CDC* pDC, const std::vector<CString>& files, CR
 
     for (const auto& file : files)
     {
-        pDC->DrawText(_T("📎 ") + file, &fileRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+        pDC->FillSolidRect(&fileRect, RGB(240, 240, 250));
+        pDC->DrawText(_T("📎 ") + file.fileName, &fileRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+        pDC->Draw3dRect(&fileRect, RGB(200, 200, 200), RGB(200, 200, 200));
         fileRect.OffsetRect(0, FILE_ITEM_HEIGHT);
     }
 }
 
-void MessageItemStyle::DrawImages(CDC* pDC, const std::vector<CString>& images, CRect& rect)
+void MessageItemStyle::DrawImages(CDC* pDC, const std::vector<ImageItem>& images, CRect& rect)
 {
+    Graphics graphics(pDC->GetSafeHdc());
     CRect imageRect = rect;
     imageRect.bottom = imageRect.top + IMAGE_PREVIEW_HEIGHT;
 
     for (const auto& image : images)
     {
-        // Draw placeholder for image
-        pDC->Rectangle(&imageRect);
-        pDC->SetTextColor(RGB(100, 100, 100));
-        pDC->DrawText(_T("🖼️ ") + image, &imageRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        CString localPath;
+        if (DownloadImageIfNotExists(image, localPath))
+        {
+            Gdiplus::Bitmap bitmap((LPCWSTR)localPath);
+            if (bitmap.GetLastStatus() == Gdiplus::Ok)
+            {
+                Gdiplus::Rect gdipRect(imageRect.left, imageRect.top,
+                    imageRect.Width(), imageRect.Height());
+
+                if (auto path = CreateRoundRectPath(gdipRect, 5))
+                {
+                    graphics.SetClip(path);
+                    graphics.DrawImage(&bitmap, gdipRect);
+                    graphics.ResetClip();
+                    delete path;
+                }
+                else
+                {
+                    graphics.DrawImage(&bitmap, gdipRect); // fallback
+                }
+            }
+            else
+            {
+                // Trường hợp bitmap không hợp lệ
+                pDC->Rectangle(&imageRect);
+                pDC->SetTextColor(RGB(100, 100, 100));
+                pDC->DrawText(_T("🖼️ Failed: ") + image.fileName, &imageRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+            }
+        }
+        else
+        {
+            // Không tải được ảnh
+            pDC->Rectangle(&imageRect);
+            pDC->SetTextColor(RGB(100, 100, 100));
+            pDC->DrawText(_T("❌ ") + image.fileName, &imageRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+        }
+
         imageRect.OffsetRect(0, IMAGE_PREVIEW_HEIGHT + 5);
     }
 }
@@ -447,12 +519,12 @@ CSize MessageItemStyle::CalculateTextSize(CDC* pDC, const CString& text, int max
     return CSize(calcRect.Width(), calcRect.Height());
 }
 
-int MessageItemStyle::CalculateFilesHeight(const std::vector<CString>& files)
+int MessageItemStyle::CalculateFilesHeight(const std::vector<FileItem>& files)
 {
     return (int)files.size() * FILE_ITEM_HEIGHT;
 }
 
-int MessageItemStyle::CalculateImagesHeight(const std::vector<CString>& images)
+int MessageItemStyle::CalculateImagesHeight(const std::vector<ImageItem>& images)
 {
     return (int)images.size() * (IMAGE_PREVIEW_HEIGHT + 5);
 }
@@ -516,4 +588,35 @@ void MessageItemStyle::InitializeBrushes()
     m_brushOutgoing.CreateSolidBrush(RGB(74, 144, 226));  // Blue
     m_brushIncoming.CreateSolidBrush(RGB(230, 230, 230)); // Light gray
     m_brushAvatar.CreateSolidBrush(RGB(150, 150, 150));   // Gray for avatar
+}
+
+bool MessageItemStyle::DownloadImageIfNotExists(const ImageItem image, CString& localPathOut)
+{
+    // Lấy đường dẫn thư mục tạm
+    TCHAR tempPath[MAX_PATH];
+    SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, tempPath);
+
+    CString filePath;
+    filePath.Format(_T("%s\\MyAppCache\\%s"), tempPath, image.fileName);
+
+    // Kiểm tra nếu file đã tồn tại
+    if (PathFileExists(filePath))
+    {
+        localPathOut = filePath;
+        return true;
+    }
+
+    // Tạo thư mục nếu chưa có
+    CreateDirectory(CString(tempPath) + _T("\\MyAppCache"), nullptr);
+
+    CString fullUrl = _T("http://30.30.30.85:8888/api") + image.url;
+    // Tải file từ URL
+    HRESULT hr = URLDownloadToFile(nullptr, fullUrl, filePath, 0, nullptr);
+    if (SUCCEEDED(hr))
+    {
+        localPathOut = filePath;
+        return true;
+    }
+
+    return false;
 }

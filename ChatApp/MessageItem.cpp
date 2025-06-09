@@ -168,7 +168,7 @@ void MessageItem::LoadButtonImage(CImageButton& button, LPCTSTR imagePath)
 	button.LoadImageFromFile(fullPath);
 }
 
-bool MessageItem::SendMessageToFriend(const std::string& token, const std::string& friendID, const std::string& content, const std::vector<std::string>& files, std::string& errorMessage)
+bool MessageItem::SendMessageToFriend(const std::string& token, const std::string& friendID, const std::string& content, const std::vector<FileItem>& files, std::string& errorMessage)
 {
 	CURL* curl = nullptr;
 	CURLcode res = CURLE_OK;
@@ -207,7 +207,8 @@ bool MessageItem::SendMessageToFriend(const std::string& token, const std::strin
 			curl_mime_data(part, content.c_str(), CURL_ZERO_TERMINATED);
 		}
 
-		for (const auto& filePath : files) {
+		for (const auto& file : files) {
+			std::string filePath = CT2A(file.url);//chuyển từ CString sang string
 			if (!filePath.empty()) {
 				part = curl_mime_addpart(mime);
 				curl_mime_name(part, "files");
@@ -388,7 +389,7 @@ void MessageItem::OnBnClickedBtnSend()
 	m_editSearch.GetWindowTextW(messageText);
 
 	if (messageText.IsEmpty()) {
-		MessageBox(_T("Vui lòng nhập nội dung tin nhắn."), _T("Thông báo"), MB_OK | MB_ICONINFORMATION);
+		//MessageBox(_T("Vui lòng nhập nội dung tin nhắn."), _T("Thông báo"), MB_OK | MB_ICONINFORMATION);
 		return;
 	}
 
@@ -396,7 +397,7 @@ void MessageItem::OnBnClickedBtnSend()
 	string token = g_accessToken;
 	string friendID = CT2A(m_friendId);
 	string errorMessage = "";
-	std::vector<string> files;
+	std::vector<FileItem> files;
 
 	if (SendMessageToFriend(g_accessToken, friendID, content, files, errorMessage)) {
 		m_messageList.ClearMessages();
@@ -411,7 +412,7 @@ void MessageItem::OnBnClickedBtnImage()
 	string friendID = CT2A(m_friendId);
 	string errorMessage;
 	string content;
-	std::vector<string> selectedFiles;
+	std::vector<FileItem> selectedFiles;
 	CString filter = _T("Image Files (*.bmp; *.jpg; *.jpeg; *.png; *.gif; *.tiff)|*.bmp;*.jpg;*.jpeg;*.png;*.gif;*.tiff|")
 		_T("Bitmap Files (*.bmp)|*.bmp|")
 		_T("JPEG Files (*.jpg;*.jpeg)|*.jpg;*.jpeg|")
@@ -425,17 +426,18 @@ void MessageItem::OnBnClickedBtnImage()
 
 	if (openDlg.DoModal() == IDOK) {
 		POSITION pos = openDlg.GetStartPosition();
-		if (pos == NULL) {
-			CString cstrPath = openDlg.GetPathName();
-			string filePath = CT2A(cstrPath);
-			selectedFiles.push_back(filePath);
-		}
-		else {
-			while (pos != NULL) {
-				CString cstrPath = openDlg.GetNextPathName(pos);
-				string filePath = CT2A(cstrPath);
-				selectedFiles.push_back(filePath);
-			}
+		while (pos != NULL) {
+			CString cstrPath = openDlg.GetNextPathName(pos);
+
+			FileItem item;
+			item.url = cstrPath;
+			int index = cstrPath.ReverseFind(_T('\\'));
+			if (index != -1)
+				item.fileName = cstrPath.Mid(index + 1);
+			else
+				item.fileName = cstrPath;
+
+			selectedFiles.push_back(item);
 		}
 
 		if (!selectedFiles.empty()) {
@@ -453,7 +455,7 @@ void MessageItem::OnBnClickedBtnFile()
 	string friendID = CT2A(m_friendId);
 	string errorMessage;
 	string content;
-	std::vector<string> selectedFiles;
+	std::vector<FileItem> selectedFiles;
 
 	CFileDialog openDlg(TRUE, _T("txt"), NULL,
 		OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT | OFN_FILEMUSTEXIST | OFN_ALLOWMULTISELECT,
@@ -462,17 +464,18 @@ void MessageItem::OnBnClickedBtnFile()
 
 	if (openDlg.DoModal() == IDOK) {
 		POSITION pos = openDlg.GetStartPosition();
-		if (pos == NULL) {
-			CString cstrPath = openDlg.GetPathName();
-			string filePath = CT2A(cstrPath);
-			selectedFiles.push_back(filePath);
-		}
-		else {
-			while (pos != NULL) {
-				CString cstrPath = openDlg.GetNextPathName(pos);
-				string filePath = CT2A(cstrPath);
-				selectedFiles.push_back(filePath);
-			}
+		while (pos != NULL) {
+			CString cstrPath = openDlg.GetNextPathName(pos);
+
+			FileItem item;
+			item.url = cstrPath;
+			int index = cstrPath.ReverseFind(_T('\\'));
+			if (index != -1)
+				item.fileName = cstrPath.Mid(index + 1);
+			else
+				item.fileName = cstrPath;
+
+			selectedFiles.push_back(item);
 		}
 
 		if (!selectedFiles.empty()) {

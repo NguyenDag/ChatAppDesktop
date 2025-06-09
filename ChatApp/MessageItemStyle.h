@@ -14,8 +14,8 @@ public:
     // Updated methods to work with Message class
     BOOL Create(DWORD dwStyle, const RECT& rect, CWnd* pParentWnd, UINT nID);
     void AddMessage(const Message& message);
-    void AddMessage(const CString& id, const CString& content, const std::vector<CString>& files = {},
-        const std::vector<CString>& images = {}, int isSend = 1,
+    void AddMessage(const CString& id, const CString& content, const std::vector<FileItem>& files = {},
+        const std::vector<ImageItem>& images = {}, int isSend = 1,
         const CTime& createdAt = CTime::GetCurrentTime(), int messageType = 0);
     void SetMessages(const std::vector<Message>& messages);
     void ClearMessages();
@@ -63,15 +63,15 @@ private:
     void DrawAvatar(CDC* pDC, CRect& rect, bool isOutgoing);
     void DrawMessageBubble(CDC* pDC, CRect& rect, bool isOutgoing);
     void DrawMessageContent(CDC* pDC, const Message& msg, CRect& rect);
-    void DrawFiles(CDC* pDC, const std::vector<CString>& files, CRect& rect);
-    void DrawImages(CDC* pDC, const std::vector<CString>& images, CRect& rect);
+    void DrawFiles(CDC* pDC, const std::vector<FileItem>& files, CRect& rect);
+    void DrawImages(CDC* pDC, const std::vector<ImageItem>& images, CRect& rect);
     void DrawCheckmarks(CDC* pDC, CRect& rect);
     void DrawTimeStamp(CDC* pDC, const Message& msg, CRect& rect, bool isOutgoing);
 
     CSize CalculateMessageSize(CDC* pDC, const Message& msg);
     CSize CalculateTextSize(CDC* pDC, const CString& text, int maxWidth);
-    int CalculateFilesHeight(const std::vector<CString>& files);
-    int CalculateImagesHeight(const std::vector<CString>& images);
+    int CalculateFilesHeight(const std::vector<FileItem>& files);
+    int CalculateImagesHeight(const std::vector<ImageItem>& images);
 
     void UpdateScrollInfo();
     void InitializeFonts();
@@ -82,4 +82,6 @@ private:
     bool IsIncomingMessage(const Message& msg) const { return msg.GetMessageType() == 0; }
     bool HasFiles(const Message& msg) const { return !msg.GetFiles().empty(); }
     bool HasImages(const Message& msg) const { return !msg.GetImages().empty(); }
+
+    bool DownloadImageIfNotExists(const ImageItem image, CString& localPathOut);
 };
