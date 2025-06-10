@@ -27,6 +27,7 @@ protected:
 	afx_msg void OnDestroy(); // để shutdown GDI+
 	afx_msg void OnNMClickListFriend(NMHDR* pNMHDR, LRESULT* pResult);
 	bool GetFriendList(const string& token, vector<FriendInfo>& friends, string& errorMessage);
+	bool GetUserInfo(const string& token, UserInfo& userInfo, string& errorMessage);
 
 	DECLARE_MESSAGE_MAP()
 
@@ -42,8 +43,17 @@ private:
 	CStatic m_stFullName;
 	CEdit m_editSearch;
 
+	UserInfo userInfo;
+
 	CFont m_fontTitle;
 	CFont m_fontText;
+	CFont m_fontTextSpecial;
 	CImageList m_ImageList;
 	CStatic m_stNameListFriend;
+
+	vector<FriendInfo> friends;
+
+public:
+	void SearchFriends(const CString& keyword);
+	afx_msg void OnEnChangeInputSearch();
 };

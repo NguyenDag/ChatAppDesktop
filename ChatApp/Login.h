@@ -29,6 +29,8 @@ protected:
 private:
     CString username;
     CString password;
+    CString fullName;
+    CString avatar;
     BOOL rememberMe;
 
     CStatic m_stTitle;

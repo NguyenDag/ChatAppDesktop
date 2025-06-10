@@ -266,6 +266,9 @@ void Login::LoginAccount(const CString& username, const CString& password, CStri
 					response.contains("data") && response["data"].contains("token")) {
 
 					g_accessToken = response["data"]["token"].get<string>();
+
+					fullName = CString(response["data"]["FullName"].get<string>().c_str());
+					//avatar = CString(response["data"]["Avatar"].get<string>().c_str());
 					errorMessage = _T(""); 
 				}
 				else {

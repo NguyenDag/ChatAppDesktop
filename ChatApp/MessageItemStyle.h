@@ -49,12 +49,14 @@ private:
 
     // Constants
     static const int MESSAGE_PADDING = 15;
-    static const int BUBBLE_PADDING = 12;
+    static const int BUBBLE_PADDING = 10;
     static const int AVATAR_SIZE = 40;
     static const int AVATAR_MARGIN = 10;
     static const int TIME_HEIGHT = 22;
     static const int FILE_ITEM_HEIGHT = 25;
     static const int IMAGE_PREVIEW_HEIGHT = 100;
+    static const int FILE_ITEM_PADDING = 10;
+    static const int MAX_FILE_ITEM_WIDTH = 200;
 
     // Private methods
     void DrawMessage(CDC* pDC, const Message& msg, CRect& rect, int index);
@@ -72,6 +74,8 @@ private:
     CSize CalculateTextSize(CDC* pDC, const CString& text, int maxWidth);
     int CalculateFilesHeight(const std::vector<FileItem>& files);
     int CalculateImagesHeight(const std::vector<ImageItem>& images);
+
+    CString GetFileIcon(const CString& extension);
 
     void UpdateScrollInfo();
     void InitializeFonts();

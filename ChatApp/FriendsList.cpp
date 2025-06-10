@@ -82,7 +82,7 @@ BOOL FriendsList::OnInitDialog()
 	}
 
 	//=============set vị trí avatar========== 
-	int avatarX = dlgWidth - 120;
+	int avatarX = dlgWidth - 180;
 	int avatarY = 30; //margin top
 	int avatarWidth = 70;
 	int avatarHeight = 70;
@@ -95,15 +95,29 @@ BOOL FriendsList::OnInitDialog()
 
 	int widthFullName = rectFullName.Width();
 	int heightFullName = rectFullName.Height();
+	int nameX = avatarX + (avatarWidth - widthFullName) / 2;
+	int nameY = avatarY + avatarHeight + 10;
 
-	m_stFullName.MoveWindow(avatarX, avatarY + 90, widthFullName, heightFullName);
+	string error;
+	if (GetUserInfo(g_accessToken, userInfo, error)) {
+		m_stFullName.SetWindowText(userInfo.FullName);
+	}
+	else {
+		m_stFullName.SetWindowText(_T("Chưa có tên"));
+	}
+	m_stFullName.MoveWindow(nameX, nameY, widthFullName, heightFullName);
 
-	m_fontText.CreateFont(25, 0, 0, 0, FW_BOLD, FALSE, FALSE, 0,
+	m_fontTextSpecial.CreateFont(25, 0, 0, 0, FW_BOLD, FALSE, FALSE, 0,
 		ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
 		DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, _T("Roboto"));
-	m_stFullName.SetFont(&m_fontText);
-	m_stNameListFriend.SetFont(&m_fontText);
 
+	m_stFullName.SetFont(&m_fontTextSpecial);
+	m_stNameListFriend.SetFont(&m_fontTextSpecial);
+
+	m_fontText.CreateFont(22, 0, 0, 0, FW_NORMAL, FALSE, FALSE, 0,
+		ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+		DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, _T("Roboto"));
+	m_editSearch.SetFont(&m_fontText);
 	//set logo bkav font
 	m_fontTitle.CreateFont(28, 0, 0, 0, FW_BOLD, FALSE, FALSE, 0,
 		ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
@@ -118,7 +132,7 @@ BOOL FriendsList::OnInitDialog()
 
 	int width = static_cast<int>(screenWidth * 0.4);;
 	int height = rectSearch.Height();
-	int left = (dlgWidth - width) / 2;
+	int left = (dlgWidth - width) / 2 - 100;
 	int top = static_cast<int>(dlgHeight * 0.15);
 
 	m_editSearch.MoveWindow(left, top, width, height);
@@ -142,9 +156,7 @@ BOOL FriendsList::OnInitDialog()
 	imageList.Create(50, 50, ILC_COLOR32, 0, 10);
 	m_listFriend.SetImageList(&imageList, LVSIL_SMALL);
 
-//========handling get list friends by token========
-	vector<FriendInfo> friends;
-	string error;
+	//========handling get list friends by token========
 
 	if (GetFriendList(g_accessToken, friends, error)) {
 		for (const auto& friendInfo : friends) {
@@ -283,6 +295,92 @@ bool FriendsList::GetFriendList(const string& token, vector<FriendInfo>& friends
 	return false;
 }
 
+bool FriendsList::GetUserInfo(const string& token, UserInfo& userInfo, string& errorMessage)
+{
+	CURL* curl;
+	CURLcode res;
+	string readBuffer;
+
+	curl = curl_easy_init();
+	if (!curl) {
+		errorMessage = "Không thể khởi tạo CURL";
+		return false;
+	}
+
+	struct curl_slist* headers = nullptr;
+	string authHeader = "Authorization: Bearer " + token;
+	headers = curl_slist_append(headers, authHeader.c_str());
+
+	curl_easy_setopt(curl, CURLOPT_URL, "http://30.30.30.85:8888/api/user/info");
+	curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
+	curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+	curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+	curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+
+	res = curl_easy_perform(curl);
+
+	if (res != CURLE_OK) {
+		errorMessage = string("Lỗi kết nối: ") + curl_easy_strerror(res);
+		curl_easy_cleanup(curl);
+		curl_slist_free_all(headers);
+		return false;
+	}
+
+	try {
+		json response = json::parse(readBuffer);
+		if (response["status"] == 1) {
+			json data = response["data"];
+			userInfo.FullName = Utf8ToCString(data.value("FullName", ""));
+			userInfo.Username = Utf8ToCString(data.value("Username", ""));
+			userInfo.Avatar = Utf8ToCString(data.value("Avatar", ""));
+
+			/*m_fullName = Utf8ToCString(data.value("FullName", ""));
+			m_username = Utf8ToCString(data.value("Username", ""));
+			m_avatar = Utf8ToCString(data.value("Avatar", ""));*/
+			errorMessage.clear();
+			curl_easy_cleanup(curl);
+			curl_slist_free_all(headers);
+			return true;
+		}
+		else {
+			errorMessage = response.value("message", "Lỗi không xác định");
+		}
+	}
+	catch (const exception& e) {
+		errorMessage = string("Lỗi phân tích JSON: ") + e.what();
+	}
+
+	curl_easy_cleanup(curl);
+	curl_slist_free_all(headers);
+	return false;
+}
+
+void FriendsList::SearchFriends(const CString& keyword)
+{
+	CString searchKey = keyword;
+	searchKey.Trim();
+	searchKey.MakeLower();
+
+	if (keyword.IsEmpty()) {
+		return;
+	}
+
+	m_listFriend.DeleteAllItems();
+
+	for (const auto& friendItem : friends) {
+		CString fullName = friendItem.FullName;
+
+		CString fullNameLower = fullName;
+		fullNameLower.MakeLower();
+
+		if (fullNameLower.Find(searchKey) != -1)
+		{
+			int index = m_listFriend.InsertItem(m_listFriend.GetItemCount(), fullName);
+			m_listFriend.SetItemText(index, 1, friendItem.Username);
+		}
+	}
+}
+
 HBRUSH FriendsList::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
 {
 	HBRUSH hbr = CDialogEx::OnCtlColor(pDC, pWnd, nCtlColor);
@@ -315,5 +413,13 @@ BEGIN_MESSAGE_MAP(FriendsList, CDialogEx)
 	ON_WM_CTLCOLOR()
 	ON_WM_PAINT()
 	ON_NOTIFY(NM_CLICK, IDC_LIST_FRIEND, &FriendsList::OnNMClickListFriend)
+	ON_EN_CHANGE(IDC_INPUT_SEARCH, &FriendsList::OnEnChangeInputSearch)
 END_MESSAGE_MAP()
 
+
+void FriendsList::OnEnChangeInputSearch()
+{
+	CString keyword;
+	m_editSearch.GetWindowText(keyword);
+	SearchFriends(keyword);
+}

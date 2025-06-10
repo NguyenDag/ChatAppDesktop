@@ -18,6 +18,13 @@ struct FriendInfo {
     bool isSend;
 };
 
+struct UserInfo {
+    CString Username;
+    CString FullName;
+    CString Avatar;
+};
+
+
 class CFriendItemCtrl : public CListCtrl
 {
 public:
