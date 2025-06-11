@@ -90,9 +90,14 @@ BOOL MessageItem::OnInitDialog()
 	LoadMessages();
 
 	//===========set Search bar=============
+	m_fontText.CreateFont(22, 0, 0, 0, FW_NORMAL, FALSE, FALSE, 0,
+		ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
+		DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, _T("Roboto"));
 	CRect rectSearch;
 	m_editSearch.GetWindowRect(&rectSearch);// lấy tọa độ màn hình
 	ScreenToClient(&rectSearch);// chuyển về tọa độ client
+
+	m_editSearch.SetFont(&m_fontText);
 
 	int left = 10;
 	int top = clientRect.Height() - 50;
@@ -492,16 +497,17 @@ void MessageItem::OnBnClickedBtnEmoji()
 
 void MessageItem::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	int fileIndex;
+	MessageBox(_T("OnLButtonDown được gọi!"), _T("Test 1"));
+	int fileIndex = -1;
 	if (m_messageList.HandleFileClick(point, fileIndex))
 	{
-		// Click vào download button
+		MessageBox(_T("Trúng nút download!"), _T("Test 2"));
+
 		if (fileIndex >= 0 && fileIndex < m_messageList.m_currentFiles.size())
 		{
 			m_messageList.DownloadFile(m_messageList.m_currentFiles[fileIndex]);
 		}
 	}
-
 	CDialogEx::OnLButtonDown(nFlags, point);
 }
 

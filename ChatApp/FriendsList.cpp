@@ -107,7 +107,7 @@ BOOL FriendsList::OnInitDialog()
 	}
 	m_stFullName.MoveWindow(nameX, nameY, widthFullName, heightFullName);
 
-	m_fontTextSpecial.CreateFont(25, 0, 0, 0, FW_BOLD, FALSE, FALSE, 0,
+	m_fontTextSpecial.CreateFont(22, 0, 0, 0, FW_BOLD, FALSE, FALSE, 0,
 		ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
 		DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, _T("Roboto"));
 
@@ -274,6 +274,28 @@ bool FriendsList::GetFriendList(const string& token, vector<FriendInfo>& friends
 				f.isOnline = item.value("isOnline", false);
 				f.Content = Utf8ToCString(item.value("Content", ""));
 				f.isSend = item.value("isSend", 0);
+
+				f.files.clear();
+				if (item.contains("Files") && item["Files"].is_array()) {
+					for (const auto& file : item["Files"]) {
+						FileItem fileItem;
+						fileItem.fileName = Utf8ToCString(file.value("FileName", ""));
+						fileItem.url = Utf8ToCString(file.value("urlFile", ""));
+						fileItem.id = Utf8ToCString(file.value("_id", ""));
+						f.files.push_back(fileItem);
+					}
+				}
+
+				f.images.clear();
+				if (item.contains("Images") && item["Images"].is_array()) {
+					for (const auto& image : item["Images"]) {
+						ImageItem imageItem;
+						imageItem.fileName = Utf8ToCString(image.value("FileName", ""));
+						imageItem.url = Utf8ToCString(image.value("urlImage", ""));
+						imageItem.id = Utf8ToCString(image.value("_id", ""));
+						f.images.push_back(imageItem);
+					}
+				}
 
 				friends.push_back(f);
 			}

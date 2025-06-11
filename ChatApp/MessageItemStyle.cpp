@@ -3,8 +3,10 @@
 #include <gdiplus.h>
 #include <curl/curl.h>
 #include <iostream>
+#include <winhttp.h>
 
 #include <gdiplus.h>
+#pragma comment(lib, "winhttp.lib")
 #pragma comment(lib, "gdiplus.lib")
 using namespace Gdiplus;
 
@@ -162,9 +164,8 @@ void MessageItemStyle::DownloadFile(const FileItem& file)
 	{
 		CString savePath = dlg.GetPathName();
 
-		// TODO: Thực hiện tải file từ server/source
-		// Ví dụ:
-		if (CopyFile(file.url, savePath, FALSE))
+
+		if (DownloadFileFromServer(file, savePath))
 		{
 			MessageBox(_T("File đã được tải thành công!"), _T("Thông báo"), MB_OK | MB_ICONINFORMATION);
 		}
@@ -172,6 +173,121 @@ void MessageItemStyle::DownloadFile(const FileItem& file)
 		{
 			MessageBox(_T("Lỗi khi tải file!"), _T("Lỗi"), MB_OK | MB_ICONERROR);
 		}
+	}
+}
+
+bool MessageItemStyle::DownloadFileFromServer(const FileItem& fileItem, const CString& savePath)
+{
+	try
+	{
+		// Tạo URL download
+		CString downloadUrl;
+		downloadUrl.Format(_T("http://30.30.30.85:8888/api%s"), fileItem.url);
+
+		// Sử dụng WinHTTP để tải file
+		HINTERNET hSession = NULL;
+		HINTERNET hConnect = NULL;
+		HINTERNET hRequest = NULL;
+		bool bResult = false;
+
+		do
+		{
+			// Khởi tạo WinHTTP session
+			hSession = WinHttpOpen(L"FileDownloader/1.0",
+				WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+				WINHTTP_NO_PROXY_NAME,
+				WINHTTP_NO_PROXY_BYPASS,
+				0);
+			if (!hSession) break;
+
+			// Kết nối đến server
+			hConnect = WinHttpConnect(hSession, L"30.30.30.85", 8888, 0);
+			if (!hConnect) break;
+
+			// Tạo request path
+			CString requestPath;
+			requestPath.Format(_T("/api%s"), fileItem.url);
+
+			// Tạo HTTP request
+			hRequest = WinHttpOpenRequest(hConnect, L"GET", requestPath,
+				NULL, WINHTTP_NO_REFERER,
+				WINHTTP_DEFAULT_ACCEPT_TYPES,
+				0);
+			if (!hRequest) break;
+
+			// Gửi request
+			if (!WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+				WINHTTP_NO_REQUEST_DATA, 0, 0, 0))
+				break;
+
+			// Nhận response
+			if (!WinHttpReceiveResponse(hRequest, NULL))
+				break;
+
+			// Kiểm tra status code
+			DWORD statusCode = 0;
+			DWORD statusCodeSize = sizeof(statusCode);
+			if (!WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+				WINHTTP_HEADER_NAME_BY_INDEX, &statusCode, &statusCodeSize, NULL))
+				break;
+
+			if (statusCode != 200)
+			{
+				CString errorMsg;
+				errorMsg.Format(_T("Server trả về lỗi: HTTP %d"), statusCode);
+				MessageBox(errorMsg, _T("Lỗi"), MB_OK | MB_ICONERROR);
+				break;
+			}
+
+			// Tạo file để ghi
+			HANDLE hFile = CreateFile(savePath, GENERIC_WRITE, 0, NULL,
+				CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+			if (hFile == INVALID_HANDLE_VALUE) break;
+
+			// Đọc và ghi dữ liệu
+			DWORD dwSize = 0;
+			DWORD dwDownloaded = 0;
+			DWORD dwWritten = 0;
+			BYTE buffer[8192];
+
+			do
+			{
+				// Kiểm tra có data để đọc không
+				if (!WinHttpQueryDataAvailable(hRequest, &dwSize))
+					break;
+
+				if (dwSize == 0)
+					break; // Hết data
+
+				// Đọc data
+				DWORD dwToRead = min(dwSize, sizeof(buffer));
+				if (!WinHttpReadData(hRequest, buffer, dwToRead, &dwDownloaded))
+					break;
+
+				// Ghi vào file
+				if (!WriteFile(hFile, buffer, dwDownloaded, &dwWritten, NULL))
+					break;
+
+				if (dwWritten != dwDownloaded)
+					break;
+
+			} while (dwSize > 0);
+
+			CloseHandle(hFile);
+			bResult = true;
+
+		} while (false);
+
+		// Cleanup
+		if (hRequest) WinHttpCloseHandle(hRequest);
+		if (hConnect) WinHttpCloseHandle(hConnect);
+		if (hSession) WinHttpCloseHandle(hSession);
+
+		return bResult;
+	}
+	catch (...)
+	{
+		return false;
 	}
 }
 
@@ -184,6 +300,8 @@ void MessageItemStyle::OnPaint()
 	dc.FillRect(&clientRect, &m_brushBg);
 
 	if (m_messages.empty()) return;
+	m_downloadRects.clear();
+	OutputDebugString(_T("DUBUG: tao delete here!\n"));
 
 	int yOffset = -m_nScrollPos;
 
@@ -320,7 +438,7 @@ void MessageItemStyle::DrawOutgoingMessage(CDC* pDC, const Message& msg, CRect& 
 	}
 	else
 	{
-		bubbleRect.left = rect.right - MESSAGE_PADDING - 200; 
+		bubbleRect.left = rect.right - MESSAGE_PADDING - 200;
 		bubbleRect.right = rect.right - MESSAGE_PADDING;
 		bubbleRect.top = rect.top + MESSAGE_PADDING;
 		bubbleHeight = filesHeight + imagesHeight + (BUBBLE_PADDING * 2);
@@ -337,12 +455,14 @@ void MessageItemStyle::DrawOutgoingMessage(CDC* pDC, const Message& msg, CRect& 
 	DrawTimeStamp(pDC, msg, timeRect, true);*/
 
 	// Vẽ checkmark
-	CRect checkRect;
-	checkRect.left = bubbleRect.right + 5;
-	checkRect.right = checkRect.left + 20;
-	checkRect.top = bubbleRect.bottom - 15;
-	checkRect.bottom = bubbleRect.bottom;
-	DrawCheckmarks(pDC, checkRect);
+	if (!msg.GetIsSend()) {
+		CRect checkRect;
+		checkRect.left = bubbleRect.right + 5;
+		checkRect.right = checkRect.left + 20;
+		checkRect.top = bubbleRect.bottom - 15;
+		checkRect.bottom = bubbleRect.bottom;
+		DrawCheckmarks(pDC, checkRect);
+	}
 }
 
 void MessageItemStyle::DrawIncomingMessage(CDC* pDC, const Message& msg, CRect& rect)
@@ -486,8 +606,6 @@ void MessageItemStyle::DrawFiles(CDC* pDC, const std::vector<FileItem>& files, C
 	fileRect.right = fileRect.left + rect.Width();
 	fileRect.bottom = fileRect.top + FILE_ITEM_HEIGHT;
 
-	// Clear và cập nhật danh sách
-	m_downloadRects.clear();
 	m_currentFiles = files;
 
 	const int DOWNLOAD_ICON_WIDTH = 30;
@@ -516,10 +634,11 @@ void MessageItemStyle::DrawFiles(CDC* pDC, const std::vector<FileItem>& files, C
 
 		// Lưu vị trí download button
 		m_downloadRects.push_back(downloadRect);
+		OutputDebugString(_T("DUBUG: tao set here!\n"));
 
 		// Vẽ icon download (sử dụng ký tự Unicode hoặc vẽ custom)
 		pDC->SetTextColor(RGB(0, 150, 0));
-		pDC->DrawText(_T("⬇"), &downloadRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+		pDC->DrawText(_T("⇓"), &downloadRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
 
 		// Vẽ border cho download button
 		pDC->Draw3dRect(&downloadRect, RGB(150, 150, 150), RGB(150, 150, 150));
@@ -530,9 +649,10 @@ void MessageItemStyle::DrawFiles(CDC* pDC, const std::vector<FileItem>& files, C
 		// Vẽ border cho toàn bộ file item
 		pDC->Draw3dRect(&fileRect, RGB(200, 200, 200), RGB(200, 200, 200));
 
-		fileRect.OffsetRect(0, FILE_ITEM_HEIGHT);
+		fileRect.OffsetRect(0, FILE_ITEM_HEIGHT + 10);
+
 	}
-	origin.y += FILE_ITEM_HEIGHT + 20;
+	//origin.y += FILE_ITEM_HEIGHT + 20;
 }
 
 void MessageItemStyle::DrawImages(CDC* pDC, const std::vector<ImageItem>& images, CRect& rect)
@@ -700,7 +820,7 @@ void MessageItemStyle::UpdateScrollInfo()
 void MessageItemStyle::InitializeFonts()
 {
 	m_fontMessage.CreateFont(
-		14, 0, 0, 0, FW_NORMAL, FALSE, FALSE, 0,
+		22, 0, 0, 0, FW_NORMAL, FALSE, FALSE, 0,
 		ANSI_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS,
 		DEFAULT_QUALITY, DEFAULT_PITCH | FF_SWISS, _T("Segoe UI"));
 
@@ -720,14 +840,12 @@ void MessageItemStyle::InitializeBrushes()
 
 bool MessageItemStyle::DownloadImageIfNotExists(const ImageItem image, CString& localPathOut)
 {
-	// Lấy đường dẫn thư mục tạm
 	TCHAR tempPath[MAX_PATH];
 	SHGetFolderPath(NULL, CSIDL_LOCAL_APPDATA, NULL, 0, tempPath);
 
 	CString filePath;
 	filePath.Format(_T("%s\\MyAppCache\\%s"), tempPath, image.fileName);
 
-	// Kiểm tra nếu file đã tồn tại
 	if (PathFileExists(filePath))
 	{
 		localPathOut = filePath;

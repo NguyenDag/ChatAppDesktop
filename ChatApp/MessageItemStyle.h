@@ -26,6 +26,7 @@ public:
 
     bool HandleFileClick(CPoint point, int& fileIndex);
     void DownloadFile(const FileItem& file);
+    bool DownloadFileFromServer(const FileItem& fileItem, const CString& savePath);
 
     vector<CRect> m_downloadRects;
     vector<FileItem> m_currentFiles;
@@ -60,7 +61,7 @@ private:
     static const int AVATAR_SIZE = 40;
     static const int AVATAR_MARGIN = 10;
     static const int TIME_HEIGHT = 22;
-    static const int FILE_ITEM_HEIGHT = 25;
+    static const int FILE_ITEM_HEIGHT = 30;
     static const int IMAGE_PREVIEW_HEIGHT = 100;
     static const int FILE_ITEM_PADDING = 10;
     static const int MAX_FILE_ITEM_WIDTH = 200;

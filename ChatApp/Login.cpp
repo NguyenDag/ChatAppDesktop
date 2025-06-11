@@ -213,11 +213,11 @@ void Login::OnBnClickedLogin()
 	m_stError.SetWindowTextW(_T("")); 
 	AfxMessageBox(_T("Đăng nhập thành công"));
 
-	ShowWindow(SW_HIDE); // ẩn trang login
+	//ShowWindow(SW_HIDE); // ẩn trang login
 	//EndDialog;
 	FriendsList friendsList;
 	friendsList.DoModal();
-	ShowWindow(SW_SHOW);
+	//ShowWindow(SW_SHOW);
 	return;
 }
 

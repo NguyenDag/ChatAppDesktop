@@ -3,6 +3,8 @@
 #include <gdiplus.h> 
 #include <vector>
 #include <string>
+#include "ImageItem.h"
+#include "FileItem.h"
 
 using namespace Gdiplus;
 using namespace std;
@@ -16,6 +18,8 @@ struct FriendInfo {
     bool isOnline;
     CString Content;
     bool isSend;
+    std::vector<FileItem> files;
+    std::vector<ImageItem> images;
 };
 
 struct UserInfo {
