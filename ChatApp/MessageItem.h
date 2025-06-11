@@ -26,7 +26,7 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 	void LoadButtonImage(CImageButton& button, LPCTSTR imagePath);
-	bool SendMessageToFriend(const string& token, const string& friendID, const string& content, const vector<FileItem>& files, string& errorMessage);
+	bool SendMessageToFriend(const CString& token, const CString& friendID, const CString& content, const vector<FileItem>& files, CString& errorMessage);
 	DECLARE_MESSAGE_MAP()
 private:
 	MessageItemStyle m_messageList;
@@ -50,4 +50,5 @@ public:
 	afx_msg void OnBnClickedBtnImage();
 	afx_msg void OnBnClickedBtnFile();
 	afx_msg void OnBnClickedBtnEmoji();
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 };

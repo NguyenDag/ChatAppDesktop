@@ -139,6 +139,42 @@ void MessageItemStyle::ScrollToBottom()
 	}
 }
 
+bool MessageItemStyle::HandleFileClick(CPoint point, int& fileIndex)
+{
+	for (size_t i = 0; i < m_downloadRects.size(); ++i)
+	{
+		if (m_downloadRects[i].PtInRect(point))
+		{
+			fileIndex = static_cast<int>(i);
+			return true;
+		}
+	}
+	return false;
+}
+
+void MessageItemStyle::DownloadFile(const FileItem& file)
+{
+	CFileDialog dlg(FALSE, NULL, file.fileName,
+		OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
+		_T("All Files (*.*)|*.*||"));
+
+	if (dlg.DoModal() == IDOK)
+	{
+		CString savePath = dlg.GetPathName();
+
+		// TODO: Thực hiện tải file từ server/source
+		// Ví dụ:
+		if (CopyFile(file.url, savePath, FALSE))
+		{
+			MessageBox(_T("File đã được tải thành công!"), _T("Thông báo"), MB_OK | MB_ICONINFORMATION);
+		}
+		else
+		{
+			MessageBox(_T("Lỗi khi tải file!"), _T("Lỗi"), MB_OK | MB_ICONERROR);
+		}
+	}
+}
+
 void MessageItemStyle::OnPaint()
 {
 	CPaintDC dc(this);
@@ -255,29 +291,43 @@ void MessageItemStyle::DrawMessage(CDC* pDC, const Message& msg, CRect& rect, in
 
 void MessageItemStyle::DrawOutgoingMessage(CDC* pDC, const Message& msg, CRect& rect)
 {
-	// Calculate content size
-	CSize contentSize = CalculateTextSize(pDC, msg.GetContent(), rect.Width() * 2 / 3);
+	CSize contentSize = CSize(0, 0);
+	bool hasContent = !msg.GetContent().IsEmpty();
+	if (hasContent)
+		contentSize = CalculateTextSize(pDC, msg.GetContent(), rect.Width() * 2 / 3);
 
-	// Add space for files and images
 	int filesHeight = CalculateFilesHeight(msg.GetFiles());
 	int imagesHeight = CalculateImagesHeight(msg.GetImages());
 
-	// Calculate bubble size
-	int bubbleWidth = min(contentSize.cx + (BUBBLE_PADDING * 2), rect.Width() * 2 / 3);
-	int bubbleHeight = contentSize.cy + filesHeight + imagesHeight + (BUBBLE_PADDING * 2);
-
-	// Position bubble on the right
+	int bubbleWidth = 0;
+	int bubbleHeight = 0;
 	CRect bubbleRect;
-	bubbleRect.right = rect.right - MESSAGE_PADDING;
-	bubbleRect.left = bubbleRect.right - bubbleWidth;
-	bubbleRect.top = rect.top + MESSAGE_PADDING;
-	bubbleRect.bottom = bubbleRect.top + bubbleHeight;
 
-	// Draw bubble
-	DrawMessageBubble(pDC, bubbleRect, true);
+	if (hasContent)
+	{
+		// Nếu có content thì vẽ khung bubble
+		bubbleWidth = min(contentSize.cx + (BUBBLE_PADDING * 2), rect.Width() * 2 / 3);
+		bubbleHeight = contentSize.cy + filesHeight + imagesHeight + (BUBBLE_PADDING * 2);
 
-	// Draw content
-	DrawMessageContent(pDC, msg, bubbleRect);
+		bubbleRect.right = rect.right - MESSAGE_PADDING;
+		bubbleRect.left = bubbleRect.right - bubbleWidth;
+		bubbleRect.top = rect.top + MESSAGE_PADDING;
+		bubbleRect.bottom = bubbleRect.top + bubbleHeight;
+
+		DrawMessageBubble(pDC, bubbleRect, true);
+
+		DrawMessageContent(pDC, msg, bubbleRect);
+	}
+	else
+	{
+		bubbleRect.left = rect.right - MESSAGE_PADDING - 200; 
+		bubbleRect.right = rect.right - MESSAGE_PADDING;
+		bubbleRect.top = rect.top + MESSAGE_PADDING;
+		bubbleHeight = filesHeight + imagesHeight + (BUBBLE_PADDING * 2);
+		bubbleRect.bottom = bubbleRect.top + bubbleHeight;
+
+		DrawMessageContent(pDC, msg, bubbleRect);
+	}
 
 	// Draw timestamp
 	/*CRect timeRect = rect;
@@ -286,7 +336,7 @@ void MessageItemStyle::DrawOutgoingMessage(CDC* pDC, const Message& msg, CRect& 
 	timeRect.left = bubbleRect.right - 100;
 	DrawTimeStamp(pDC, msg, timeRect, true);*/
 
-	// Draw checkmarks
+	// Vẽ checkmark
 	CRect checkRect;
 	checkRect.left = bubbleRect.right + 5;
 	checkRect.right = checkRect.left + 20;
@@ -309,36 +359,47 @@ void MessageItemStyle::DrawIncomingMessage(CDC* pDC, const Message& msg, CRect& 
 	DrawAvatar(pDC, avatarRect, false);
 	leftMargin = avatarRect.right + AVATAR_MARGIN;
 
-	// Calculate content size
-	CSize contentSize = CalculateTextSize(pDC, msg.GetContent(), rect.Width() * 2 / 3);
+	// Content size mặc định là 0
+	CSize contentSize(0, 0);
+	if (!msg.GetContent().IsEmpty())
+		contentSize = CalculateTextSize(pDC, msg.GetContent(), rect.Width() * 2 / 3);
 
-	// Add space for files and images
 	int filesHeight = CalculateFilesHeight(msg.GetFiles());
 	int imagesHeight = CalculateImagesHeight(msg.GetImages());
 
-	// Calculate bubble size
-	int bubbleWidth = min(contentSize.cx + (BUBBLE_PADDING * 2), rect.Width() * 2 / 3);
-	int bubbleHeight = contentSize.cy + filesHeight + imagesHeight + (BUBBLE_PADDING * 2);
+	int totalHeight = contentSize.cy + filesHeight + imagesHeight + (BUBBLE_PADDING * 2);
 
-	// Position bubble on the left
-	CRect bubbleRect;
-	bubbleRect.left = leftMargin;
-	bubbleRect.right = bubbleRect.left + bubbleWidth;
-	bubbleRect.top = rect.top + MESSAGE_PADDING;
-	bubbleRect.bottom = bubbleRect.top + bubbleHeight;
+	// Bắt đầu vẽ từ đây
+	CRect contentRect;
+	contentRect.left = leftMargin;
+	contentRect.top = rect.top + MESSAGE_PADDING;
 
-	// Draw bubble
-	DrawMessageBubble(pDC, bubbleRect, false);
+	if (!msg.GetContent().IsEmpty())
+	{
+		// Chỉ khi có content thì mới vẽ bubble
+		int bubbleWidth = min(contentSize.cx + (BUBBLE_PADDING * 2), rect.Width() * 2 / 3);
+		contentRect.right = contentRect.left + bubbleWidth;
+		contentRect.bottom = contentRect.top + totalHeight;
 
-	// Draw content
-	DrawMessageContent(pDC, msg, bubbleRect);
+		DrawMessageBubble(pDC, contentRect, false);
+		DrawMessageContent(pDC, msg, contentRect);
+	}
+	else
+	{
+		// Không có content, vẽ ảnh hoặc file không có bubble
+		int width = 200; // cố định chiều rộng
+		contentRect.right = contentRect.left + width;
+		contentRect.bottom = contentRect.top + totalHeight;
 
-	// Draw timestamp
-	CRect timeRect = rect;
-	timeRect.top = bubbleRect.bottom + 2;
-	timeRect.left = bubbleRect.left;
-	timeRect.right = bubbleRect.left + 100;
-	DrawTimeStamp(pDC, msg, timeRect, false);
+		DrawMessageContent(pDC, msg, contentRect);
+	}
+
+	// Vẽ thời gian
+	/*CRect timeRect;
+	timeRect.top = contentRect.bottom + 2;
+	timeRect.left = contentRect.left;
+	timeRect.right = contentRect.left + 100;
+	DrawTimeStamp(pDC, msg, timeRect, false);*/
 }
 
 void MessageItemStyle::DrawAvatar(CDC* pDC, CRect& rect, bool isOutgoing)
@@ -422,14 +483,51 @@ void MessageItemStyle::DrawFiles(CDC* pDC, const std::vector<FileItem>& files, C
 	pDC->SetTextColor(RGB(0, 100, 200));
 	CPoint origin = rect.TopLeft();
 	CRect fileRect = rect;
-	//fileRect.right = fileRect.left + min(MAX_FILE_ITEM_WIDTH, rect.Width() - FILE_ITEM_PADDING * 2);
 	fileRect.right = fileRect.left + rect.Width();
 	fileRect.bottom = fileRect.top + FILE_ITEM_HEIGHT;
 
-	for (const auto& file : files)
+	// Clear và cập nhật danh sách
+	m_downloadRects.clear();
+	m_currentFiles = files;
+
+	const int DOWNLOAD_ICON_WIDTH = 30;
+	const int DOWNLOAD_ICON_MARGIN = 5;
+
+	for (size_t i = 0; i < files.size(); ++i)
 	{
+		const auto& file = files[i];
+
+		// Vẽ background
 		pDC->FillSolidRect(&fileRect, RGB(240, 240, 250));
-		pDC->DrawText(_T("    📎 ") + file.fileName, &fileRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+
+		// Tạo rect cho text (trừ phần icon download)
+		CRect textRect = fileRect;
+		textRect.right -= (DOWNLOAD_ICON_WIDTH + DOWNLOAD_ICON_MARGIN);
+
+		// Vẽ text file
+		pDC->DrawText(_T("    📎 ") + file.fileName, &textRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
+
+		// Tạo rect cho icon download
+		CRect downloadRect;
+		downloadRect.left = textRect.right + DOWNLOAD_ICON_MARGIN;
+		downloadRect.right = fileRect.right - 5;
+		downloadRect.top = fileRect.top + 2;
+		downloadRect.bottom = fileRect.bottom - 2;
+
+		// Lưu vị trí download button
+		m_downloadRects.push_back(downloadRect);
+
+		// Vẽ icon download (sử dụng ký tự Unicode hoặc vẽ custom)
+		pDC->SetTextColor(RGB(0, 150, 0));
+		pDC->DrawText(_T("⬇"), &downloadRect, DT_CENTER | DT_VCENTER | DT_SINGLELINE);
+
+		// Vẽ border cho download button
+		pDC->Draw3dRect(&downloadRect, RGB(150, 150, 150), RGB(150, 150, 150));
+
+		// Reset màu text
+		pDC->SetTextColor(RGB(0, 100, 200));
+
+		// Vẽ border cho toàn bộ file item
 		pDC->Draw3dRect(&fileRect, RGB(200, 200, 200), RGB(200, 200, 200));
 
 		fileRect.OffsetRect(0, FILE_ITEM_HEIGHT);
@@ -514,7 +612,7 @@ CSize MessageItemStyle::CalculateMessageSize(CDC* pDC, const Message& msg)
 		width = contentSize.cx + (BUBBLE_PADDING * 2) + MESSAGE_PADDING;
 	else if (HasFiles(msg) && !HasImages(msg))
 		width = 250 + (BUBBLE_PADDING * 2) + MESSAGE_PADDING;
-	else 
+	else
 		width = (BUBBLE_PADDING * 2) + MESSAGE_PADDING;
 	int height = max(m_nMessageHeight, contentSize.cy + filesHeight + imagesHeight + (BUBBLE_PADDING * 2) + TIME_HEIGHT + MESSAGE_PADDING);
 

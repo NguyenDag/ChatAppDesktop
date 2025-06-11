@@ -39,10 +39,10 @@ void Login::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_INPUT_USERNAME, m_editUsername);
 	DDX_Control(pDX, IDC_INPUT_PASSWORD, m_editPassword);
 	DDX_Control(pDX, IDC_CHECK_REMEMBER, m_chkRemember);
-	DDX_Control(pDX, IDC_BUTTON_LOGIN, m_btnLogin);
 	DDX_Control(pDX, IDC_STATIC_USERNAME, m_stUsername);
 	DDX_Control(pDX, IDC_STATIC_PASSWORD, m_stPassword);
 	DDX_Control(pDX, IDC_STATIC_ERROR, m_stError);
+	DDX_Control(pDX, IDOK, m_btnLogin);
 }
 
 
@@ -213,10 +213,11 @@ void Login::OnBnClickedLogin()
 	m_stError.SetWindowTextW(_T("")); 
 	AfxMessageBox(_T("Đăng nhập thành công"));
 
-	//ShowWindow(SW_HIDE); // ẩn trang login
+	ShowWindow(SW_HIDE); // ẩn trang login
 	//EndDialog;
 	FriendsList friendsList;
 	friendsList.DoModal();
+	ShowWindow(SW_SHOW);
 	return;
 }
 
@@ -296,4 +297,9 @@ void Login::OnStnClickedRegister()
 	RegisterDialog regis;
 	regis.DoModal();
 	return;
+}
+
+void Login::OnOK()
+{
+	OnBnClickedLogin();
 }

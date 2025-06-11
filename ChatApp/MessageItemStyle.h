@@ -24,6 +24,12 @@ public:
     const std::vector<Message>& GetMessages() const { return m_messages; }
     size_t GetMessageCount() const { return m_messages.size(); }
 
+    bool HandleFileClick(CPoint point, int& fileIndex);
+    void DownloadFile(const FileItem& file);
+
+    vector<CRect> m_downloadRects;
+    vector<FileItem> m_currentFiles;
+
 protected:
     DECLARE_MESSAGE_MAP()
     afx_msg void OnPaint();
@@ -33,8 +39,9 @@ protected:
     afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 
 private:
-    std::vector<Message> m_messages;
-    std::vector<int> m_messageHeights;
+    vector<Message> m_messages;
+    vector<int> m_messageHeights;
+    
     CFont m_fontMessage;
     CFont m_fontTime;
     CBrush m_brushBg;

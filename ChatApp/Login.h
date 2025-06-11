@@ -24,6 +24,7 @@ protected:
 	afx_msg void OnBnClickedLogin();
     void LoginAccount(const CString& username, const CString& password, CString& errorMessage);
 	afx_msg void OnStnClickedRegister();
+    virtual void OnOK();
 	DECLARE_MESSAGE_MAP()
 
 private:

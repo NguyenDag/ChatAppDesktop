@@ -168,7 +168,7 @@ void MessageItem::LoadButtonImage(CImageButton& button, LPCTSTR imagePath)
 	button.LoadImageFromFile(fullPath);
 }
 
-bool MessageItem::SendMessageToFriend(const std::string& token, const std::string& friendID, const std::string& content, const std::vector<FileItem>& files, std::string& errorMessage)
+bool MessageItem::SendMessageToFriend(const CString& token, const CString& friendID, const CString& content, const std::vector<FileItem>& files, CString& errorMessage)
 {
 	CURL* curl = nullptr;
 	CURLcode res = CURLE_OK;
@@ -194,21 +194,21 @@ bool MessageItem::SendMessageToFriend(const std::string& token, const std::strin
 
 		std::string url = "http://30.30.30.85:8888/api/message/send-message";
 
-		std::string authHeader = "Authorization: Bearer " + token;
+		std::string authHeader = "Authorization: Bearer " + string(CT2A(token));
 		headers = curl_slist_append(headers, authHeader.c_str());
 
 		curl_mimepart* part = curl_mime_addpart(mime);
 		curl_mime_name(part, "FriendID");
-		curl_mime_data(part, friendID.c_str(), CURL_ZERO_TERMINATED);
+		curl_mime_data(part, CT2A(friendID), CURL_ZERO_TERMINATED);
 
-		if (!content.empty()) {
+		if (!content.IsEmpty()) {
 			part = curl_mime_addpart(mime);
 			curl_mime_name(part, "Content");
-			curl_mime_data(part, content.c_str(), CURL_ZERO_TERMINATED);
+			curl_mime_data(part, CW2A(content, CP_UTF8), CURL_ZERO_TERMINATED);
 		}
 
 		for (const auto& file : files) {
-			std::string filePath = CT2A(file.url);//chuyển từ CString sang string
+			std::string filePath = CT2A(file.url);
 			if (!filePath.empty()) {
 				part = curl_mime_addpart(mime);
 				curl_mime_name(part, "files");
@@ -257,7 +257,6 @@ bool MessageItem::SendMessageToFriend(const std::string& token, const std::strin
 		curl_mime_free(mime);
 		curl_easy_cleanup(curl);
 
-		errorMessage.clear();
 		return true;
 	}
 	catch (const std::exception& e) {
@@ -376,6 +375,7 @@ void MessageItem::setIconButton(CMFCButton& _idc_button, HICON hicon)
 }
 
 BEGIN_MESSAGE_MAP(MessageItem, CDialogEx)
+	ON_WM_LBUTTONDOWN()
 	ON_WM_SIZE()
 	ON_BN_CLICKED(IDC_BTN_SEND, &MessageItem::OnBnClickedBtnSend)
 	ON_BN_CLICKED(IDC_BTN_IMAGE, &MessageItem::OnBnClickedBtnImage)
@@ -389,17 +389,15 @@ void MessageItem::OnBnClickedBtnSend()
 	m_editSearch.GetWindowTextW(messageText);
 
 	if (messageText.IsEmpty()) {
-		//MessageBox(_T("Vui lòng nhập nội dung tin nhắn."), _T("Thông báo"), MB_OK | MB_ICONINFORMATION);
 		return;
 	}
 
-	string content = CT2A(messageText);
-	string token = g_accessToken;
-	string friendID = CT2A(m_friendId);
-	string errorMessage = "";
+	CString token = CA2T(g_accessToken.c_str());
+	CString friendID = m_friendId;
+	CString errorMessage;
 	std::vector<FileItem> files;
 
-	if (SendMessageToFriend(g_accessToken, friendID, content, files, errorMessage)) {
+	if (SendMessageToFriend(token, friendID, messageText, files, errorMessage)) {
 		m_messageList.ClearMessages();
 		LoadMessages();
 		m_editSearch.SetWindowText(_T(""));
@@ -408,10 +406,10 @@ void MessageItem::OnBnClickedBtnSend()
 
 void MessageItem::OnBnClickedBtnImage()
 {
-	string token = g_accessToken;
-	string friendID = CT2A(m_friendId);
-	string errorMessage;
-	string content;
+	CString token = CA2T(g_accessToken.c_str());
+	CString friendID = m_friendId;
+	CString errorMessage;
+	CString content;
 	std::vector<FileItem> selectedFiles;
 	CString filter = _T("Image Files (*.bmp; *.jpg; *.jpeg; *.png; *.gif; *.tiff)|*.bmp;*.jpg;*.jpeg;*.png;*.gif;*.tiff|")
 		_T("Bitmap Files (*.bmp)|*.bmp|")
@@ -441,7 +439,7 @@ void MessageItem::OnBnClickedBtnImage()
 		}
 
 		if (!selectedFiles.empty()) {
-			if (SendMessageToFriend(g_accessToken, friendID, content, selectedFiles, errorMessage)) {
+			if (SendMessageToFriend(token, friendID, content, selectedFiles, errorMessage)) {
 				m_messageList.ClearMessages();
 				LoadMessages();
 			}
@@ -451,10 +449,10 @@ void MessageItem::OnBnClickedBtnImage()
 
 void MessageItem::OnBnClickedBtnFile()
 {
-	string token = g_accessToken;
-	string friendID = CT2A(m_friendId);
-	string errorMessage;
-	string content;
+	CString token = CA2T(g_accessToken.c_str());
+	CString friendID = m_friendId;
+	CString errorMessage;
+	CString content;
 	std::vector<FileItem> selectedFiles;
 
 	CFileDialog openDlg(TRUE, _T("txt"), NULL,
@@ -479,7 +477,7 @@ void MessageItem::OnBnClickedBtnFile()
 		}
 
 		if (!selectedFiles.empty()) {
-			if (SendMessageToFriend(g_accessToken, friendID, content, selectedFiles, errorMessage)) {
+			if (SendMessageToFriend(token, friendID, content, selectedFiles, errorMessage)) {
 				m_messageList.ClearMessages();
 				LoadMessages();
 			}
@@ -490,4 +488,37 @@ void MessageItem::OnBnClickedBtnFile()
 void MessageItem::OnBnClickedBtnEmoji()
 {
 	// TODO: Add your control notification handler code here
+}
+
+void MessageItem::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	int fileIndex;
+	if (m_messageList.HandleFileClick(point, fileIndex))
+	{
+		// Click vào download button
+		if (fileIndex >= 0 && fileIndex < m_messageList.m_currentFiles.size())
+		{
+			m_messageList.DownloadFile(m_messageList.m_currentFiles[fileIndex]);
+		}
+	}
+
+	CDialogEx::OnLButtonDown(nFlags, point);
+}
+
+void DrawDownloadIcon(CDC* pDC, CRect rect)
+{
+	CPen pen(PS_SOLID, 2, RGB(0, 150, 0));
+	CPen* oldPen = pDC->SelectObject(&pen);
+
+	CPoint center = rect.CenterPoint();
+	int size = min(rect.Width(), rect.Height()) / 3;
+
+	pDC->MoveTo(center.x, center.y - size);
+	pDC->LineTo(center.x, center.y + size);
+
+	pDC->MoveTo(center.x - size / 2, center.y + size / 2);
+	pDC->LineTo(center.x, center.y + size);
+	pDC->LineTo(center.x + size / 2, center.y + size / 2);
+
+	pDC->SelectObject(oldPen);
 }
