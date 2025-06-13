@@ -360,6 +360,9 @@ void MessageItem::LoadMessages()
 				msg.GetCreatedAt(),
 				msg.GetMessageType()
 			);
+			CString debugPoint;
+			debugPoint.Format(_T("Vi tri file so: %d\n"), msg.GetFiles());
+			OutputDebugString(debugPoint);
 		}
 	}
 	else {
@@ -380,7 +383,6 @@ void MessageItem::setIconButton(CMFCButton& _idc_button, HICON hicon)
 }
 
 BEGIN_MESSAGE_MAP(MessageItem, CDialogEx)
-	ON_WM_LBUTTONDOWN()
 	ON_WM_SIZE()
 	ON_BN_CLICKED(IDC_BTN_SEND, &MessageItem::OnBnClickedBtnSend)
 	ON_BN_CLICKED(IDC_BTN_IMAGE, &MessageItem::OnBnClickedBtnImage)
@@ -493,30 +495,6 @@ void MessageItem::OnBnClickedBtnFile()
 void MessageItem::OnBnClickedBtnEmoji()
 {
 	// TODO: Add your control notification handler code here
-}
-
-void MessageItem::OnLButtonDown(UINT nFlags, CPoint point)
-{
-	CString debugPoint;
-	debugPoint.Format(_T("Chuột đã click ở đâyyyy: x = %d, y = %d"), point.x, point.y);
-	OutputDebugString(debugPoint);
-
-	MessageBox(_T("OnLButtonDown được gọi!"), _T("Test 1"));
-
-	int fileIndex = -1;
-	if (m_messageList.HandleFileClick(point, fileIndex))
-	{
-		CString debugClick;
-		debugClick.Format(_T("Nút download đã click ở vị trí: Index: %d\n"), fileIndex);
-		OutputDebugString(debugClick);
-		MessageBox(_T("Trúng nút download!"), _T("Test 2"));
-
-		if (fileIndex >= 0 && fileIndex < m_messageList.m_currentFiles.size())
-		{
-			m_messageList.DownloadFile(m_messageList.m_currentFiles[fileIndex]);
-		}
-	}
-	CDialogEx::OnLButtonDown(nFlags, point);
 }
 
 void DrawDownloadIcon(CDC* pDC, CRect rect)

@@ -24,12 +24,12 @@ public:
     const std::vector<Message>& GetMessages() const { return m_messages; }
     size_t GetMessageCount() const { return m_messages.size(); }
 
-    bool HandleFileClick(CPoint point, int& fileIndex);
+    bool HandleFileClick(CPoint point, int& fileIndex, int& imageIndex);
     void DownloadFile(const FileItem& file);
-    bool DownloadFileFromServer(const FileItem& fileItem, const CString& savePath);
+    void DownloadImage(const ImageItem& image);
 
-    vector<CRect> m_downloadRects;
-    vector<FileItem> m_currentFiles;
+    bool DownloadFileFromServer(const FileItem& fileItem, const CString& savePath);
+    bool DownloadImageFromServer(const ImageItem& fileItem, const CString& savePath);
 
 protected:
     DECLARE_MESSAGE_MAP()
@@ -38,10 +38,16 @@ protected:
     afx_msg BOOL OnEraseBkgnd(CDC* pDC);
     afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
     afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
+    afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 
 private:
     vector<Message> m_messages;
     vector<int> m_messageHeights;
+    vector<CRect> m_downloadRects;
+    vector<CRect> m_downloadImagesRects;
+
+    vector<FileItem> m_currentFiles;
+    vector<ImageItem> m_currentImages;
     
     CFont m_fontMessage;
     CFont m_fontTime;

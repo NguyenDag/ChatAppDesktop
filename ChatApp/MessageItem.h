@@ -25,7 +25,6 @@ protected:
 	afx_msg void OnDestroy();
 	afx_msg void OnPaint();
 	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
-	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	void LoadButtonImage(CImageButton& button, LPCTSTR imagePath);
 	bool SendMessageToFriend(const CString& token, const CString& friendID, const CString& content, const vector<FileItem>& files, CString& errorMessage);
 	DECLARE_MESSAGE_MAP()
