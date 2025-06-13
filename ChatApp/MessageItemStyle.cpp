@@ -147,7 +147,7 @@ bool MessageItemStyle::HandleFileClick(CPoint point, int& fileIndex)
 	{
 		if (m_downloadRects[i].PtInRect(point))
 		{
-			fileIndex = static_cast<int>(i);
+			fileIndex = (int)i;
 			return true;
 		}
 	}
@@ -425,11 +425,11 @@ void MessageItemStyle::DrawOutgoingMessage(CDC* pDC, const Message& msg, CRect& 
 	{
 		// Nếu có content thì vẽ khung bubble
 		bubbleWidth = min(contentSize.cx + (BUBBLE_PADDING * 2), rect.Width() * 2 / 3);
-		bubbleHeight = contentSize.cy + filesHeight + imagesHeight + (BUBBLE_PADDING * 2);
+		bubbleHeight = contentSize.cy + (BUBBLE_PADDING * 2);
 
 		bubbleRect.right = rect.right - MESSAGE_PADDING;
-		bubbleRect.left = bubbleRect.right - bubbleWidth;
-		bubbleRect.top = rect.top + MESSAGE_PADDING;
+		bubbleRect.left = bubbleRect.right - bubbleWidth - MESSAGE_PADDING;
+		bubbleRect.top = rect.top;
 		bubbleRect.bottom = bubbleRect.top + bubbleHeight;
 
 		DrawMessageBubble(pDC, bubbleRect, true);
@@ -441,7 +441,7 @@ void MessageItemStyle::DrawOutgoingMessage(CDC* pDC, const Message& msg, CRect& 
 		bubbleRect.left = rect.right - MESSAGE_PADDING - 200;
 		bubbleRect.right = rect.right - MESSAGE_PADDING;
 		bubbleRect.top = rect.top + MESSAGE_PADDING;
-		bubbleHeight = filesHeight + imagesHeight + (BUBBLE_PADDING * 2);
+		bubbleHeight = filesHeight + imagesHeight + (BUBBLE_PADDING);
 		bubbleRect.bottom = bubbleRect.top + bubbleHeight;
 
 		DrawMessageContent(pDC, msg, bubbleRect);
@@ -553,11 +553,12 @@ void MessageItemStyle::DrawMessageBubble(CDC* pDC, CRect& rect, bool isOutgoing)
 void MessageItemStyle::DrawMessageContent(CDC* pDC, const Message& msg, CRect& rect)
 {
 	CRect contentRect = rect;
+	if(!msg.GetContent().IsEmpty())
 	contentRect.DeflateRect(BUBBLE_PADDING, BUBBLE_PADDING);
-	if (msg.GetContent().IsEmpty() && !HasImages(msg) && HasFiles(msg))
+	/*if (msg.GetContent().IsEmpty() && !HasImages(msg) && HasFiles(msg))
 	{
 		contentRect.right = contentRect.left + 200;
-	}
+	}*/
 	// Set text color based on message type
 	if (IsOutgoingMessage(msg))
 	{
@@ -572,12 +573,10 @@ void MessageItemStyle::DrawMessageContent(CDC* pDC, const Message& msg, CRect& r
 	pDC->SelectObject(&m_fontMessage);
 
 	CSize textSize = CalculateMessageSize(pDC, msg);
-	//CSize textSize
 
 	// Draw text content
 	if (!msg.GetContent().IsEmpty())
 	{
-		//CSize textSize = CalculateTextSize(pDC, msg.GetContent(), contentRect.Width());
 		CRect textRect = contentRect;
 		textRect.bottom = textRect.top + textSize.cy;
 		pDC->DrawText(msg.GetContent(), &textRect, DT_LEFT | DT_TOP | DT_WORDBREAK);
@@ -620,7 +619,7 @@ void MessageItemStyle::DrawFiles(CDC* pDC, const std::vector<FileItem>& files, C
 
 		// Tạo rect cho text (trừ phần icon download)
 		CRect textRect = fileRect;
-		textRect.right -= (DOWNLOAD_ICON_WIDTH + DOWNLOAD_ICON_MARGIN);
+		textRect.right -= (DOWNLOAD_ICON_WIDTH + DOWNLOAD_ICON_MARGIN * 2);
 
 		// Vẽ text file
 		pDC->DrawText(_T("    📎 ") + file.fileName, &textRect, DT_LEFT | DT_VCENTER | DT_SINGLELINE);
@@ -628,13 +627,18 @@ void MessageItemStyle::DrawFiles(CDC* pDC, const std::vector<FileItem>& files, C
 		// Tạo rect cho icon download
 		CRect downloadRect;
 		downloadRect.left = textRect.right + DOWNLOAD_ICON_MARGIN;
-		downloadRect.right = fileRect.right - 5;
+		downloadRect.right = downloadRect.left + DOWNLOAD_ICON_WIDTH;
 		downloadRect.top = fileRect.top + 2;
 		downloadRect.bottom = fileRect.bottom - 2;
 
 		// Lưu vị trí download button
 		m_downloadRects.push_back(downloadRect);
-		OutputDebugString(_T("DUBUG: tao set here!\n"));
+		//OutputDebugString(_T("DUBUG: tao set here!\n"));
+
+		CString debugText;
+		debugText.Format(_T("Tọa độ của bút download: %d: left=%d, top=%d, right=%d, bottom=%d\n"),
+			int(i), downloadRect.left, downloadRect.top, downloadRect.right, downloadRect.bottom);
+		OutputDebugString(debugText);
 
 		// Vẽ icon download (sử dụng ký tự Unicode hoặc vẽ custom)
 		pDC->SetTextColor(RGB(0, 150, 0));
@@ -652,7 +656,6 @@ void MessageItemStyle::DrawFiles(CDC* pDC, const std::vector<FileItem>& files, C
 		fileRect.OffsetRect(0, FILE_ITEM_HEIGHT + 10);
 
 	}
-	//origin.y += FILE_ITEM_HEIGHT + 20;
 }
 
 void MessageItemStyle::DrawImages(CDC* pDC, const std::vector<ImageItem>& images, CRect& rect)

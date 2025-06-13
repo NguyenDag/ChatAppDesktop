@@ -62,7 +62,7 @@ private:
     static const int AVATAR_MARGIN = 10;
     static const int TIME_HEIGHT = 22;
     static const int FILE_ITEM_HEIGHT = 30;
-    static const int IMAGE_PREVIEW_HEIGHT = 100;
+    static const int IMAGE_PREVIEW_HEIGHT = 200 / 3 * 4;
     static const int FILE_ITEM_PADDING = 10;
     static const int MAX_FILE_ITEM_WIDTH = 200;
 

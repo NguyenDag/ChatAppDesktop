@@ -497,10 +497,18 @@ void MessageItem::OnBnClickedBtnEmoji()
 
 void MessageItem::OnLButtonDown(UINT nFlags, CPoint point)
 {
+	CString debugPoint;
+	debugPoint.Format(_T("Chuột đã click ở đâyyyy: x = %d, y = %d"), point.x, point.y);
+	OutputDebugString(debugPoint);
+
 	MessageBox(_T("OnLButtonDown được gọi!"), _T("Test 1"));
+
 	int fileIndex = -1;
 	if (m_messageList.HandleFileClick(point, fileIndex))
 	{
+		CString debugClick;
+		debugClick.Format(_T("Nút download đã click ở vị trí: Index: %d\n"), fileIndex);
+		OutputDebugString(debugClick);
 		MessageBox(_T("Trúng nút download!"), _T("Test 2"));
 
 		if (fileIndex >= 0 && fileIndex < m_messageList.m_currentFiles.size())
