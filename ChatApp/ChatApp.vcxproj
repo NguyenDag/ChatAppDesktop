@@ -93,12 +93,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_WINDOWS;_DEBUG;CURL_STATICLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>D:\desktop\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)packages\desktop\lib</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <AdditionalDependencies>libcurl_a_debug.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\desktop\lib\Lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)packages\desktop\lib\Lib</AdditionalLibraryDirectories>
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -192,6 +192,7 @@
     <ClInclude Include="ChatApp.h" />
     <ClInclude Include="ChatAppDlg.h" />
     <ClInclude Include="CImageButton.h" />
+    <ClInclude Include="CLoginManager.h" />
     <ClInclude Include="FileItem.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="FriendItemCtrl.h" />
@@ -212,6 +213,7 @@
     <ClCompile Include="ChatApp.cpp" />
     <ClCompile Include="ChatAppDlg.cpp" />
     <ClCompile Include="CImageButton.cpp" />
+    <ClCompile Include="CLoginManager.cpp" />
     <ClCompile Include="FileItem.cpp" />
     <ClCompile Include="FriendItemCtrl.cpp" />
     <ClCompile Include="FriendsList.cpp" />

@@ -1,5 +1,6 @@
 #pragma once
 #include "afxdialogex.h"
+#include "CLoginManager.h"
 
 
 // Login dialog
@@ -24,6 +25,7 @@ protected:
 	afx_msg void OnBnClickedLogin();
     void LoginAccount(const CString& username, const CString& password, CString& errorMessage);
 	afx_msg void OnStnClickedRegister();
+    afx_msg void OnBnClickedCheckRemember();
     virtual void OnOK();
 	DECLARE_MESSAGE_MAP()
 
@@ -34,11 +36,14 @@ private:
     CString avatar;
     BOOL rememberMe;
 
+    CLoginManager m_loginManager;
+
     CStatic m_stTitle;
     CStatic m_stRegister;
     CStatic m_stUsername;
     CStatic m_stPassword;
     CStatic m_stError;
+
     CEdit m_editUsername;
     CEdit m_editPassword;
     CButton m_chkRemember;

@@ -5,6 +5,9 @@
 #include "Login.h"
 #include <curl/curl.h>
 #include <string>
+#include "nlohmann/json.hpp"
+#include "Util.h"
+using json = nlohmann::json;
 
 using namespace std;
 // RegisterDialog dialog
@@ -232,10 +235,14 @@ void RegisterDialog::RegisterAccount(const CString& fullName, const CString& use
 	CURLcode res;
 	string readBuffer;
 
+	string fullNameUtf8 = CStringToUtf8(fullName);
+	string usernameUtf8 = CStringToUtf8(username);
+	string passwordUtf8 = CStringToUtf8(password);
+
 	// JSON body
-	string jsonBody = "{\"FullName\":\"" + string(CT2A(fullName)) +
-		"\",\"Username\":\"" + string(CT2A(username)) +
-		"\",\"Password\":\"" + string(CT2A(password)) + "\"}";
+	string jsonBody = "{\"FullName\":\"" + fullNameUtf8 +
+		"\",\"Username\":\"" + usernameUtf8 +
+		"\",\"Password\":\"" + passwordUtf8 + "\"}";
 
 	// Init libcurl
 	curl_global_init(CURL_GLOBAL_DEFAULT);
@@ -256,7 +263,7 @@ void RegisterDialog::RegisterAccount(const CString& fullName, const CString& use
 		curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
 		curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
 
-		// Perform
+		//Perform
 		res = curl_easy_perform(curl);
 
 		if (res != CURLE_OK) {

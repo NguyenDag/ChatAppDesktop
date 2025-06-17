@@ -72,6 +72,9 @@
     <ClInclude Include="ImageItem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CLoginManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ChatApp.cpp">
@@ -117,6 +120,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ImageItem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CLoginManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -19,7 +19,7 @@ void CFriendItemCtrl::SetData(const FriendInfo& f)
 	CString url = _T("https://res.cloudinary.com/djj5gopcs/image/upload/v1744612363/download20230704194701_ult1ta.png");
 	CString localPath = _T("avatar\\avatar.png");
 
-	if (url != 1)//test avatar != empty
+	if (!url.IsEmpty())
 	{
 		Image* pImg = Image::FromFile(localPath);
 		if (pImg && pImg->GetLastStatus() == Ok) {

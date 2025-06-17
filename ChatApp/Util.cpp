@@ -15,6 +15,20 @@ CString Utf8ToCString(const std::string& utf8Str)
 	return CString(wideCharBuf.data());
 }
 
+
+std::string CStringToUtf8(const CString& cstr)
+{
+	if (cstr.IsEmpty()) return std::string();
+
+	int utf8CharLen = WideCharToMultiByte(CP_UTF8, 0, cstr, -1, nullptr, 0, nullptr, nullptr);
+	if (utf8CharLen == 0) return std::string();
+
+	std::vector<CHAR> utf8CharBuf(utf8CharLen);
+	WideCharToMultiByte(CP_UTF8, 0, cstr, -1, utf8CharBuf.data(), utf8CharLen, nullptr, nullptr);
+
+	return std::string(utf8CharBuf.data());
+}
+
 size_t WriteCallback(void* contents, size_t size, size_t nmemb, string* userp)
 {
 	size_t totalSize = size * nmemb;

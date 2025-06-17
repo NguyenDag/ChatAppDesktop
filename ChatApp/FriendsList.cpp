@@ -383,22 +383,17 @@ void FriendsList::SearchFriends(const CString& keyword)
 	searchKey.Trim();
 	searchKey.MakeLower();
 
-	if (keyword.IsEmpty()) {
-		return;
-	}
-
 	m_listFriend.DeleteAllItems();
 
-	for (const auto& friendItem : friends) {
-		CString fullName = friendItem.FullName;
+	for (int i = 0; i < friends.size(); ++i) {
+		const auto& friendItem = friends[i];
 
-		CString fullNameLower = fullName;
+		CString fullNameLower = friendItem.FullName;
 		fullNameLower.MakeLower();
 
-		if (fullNameLower.Find(searchKey) != -1)
-		{
-			int index = m_listFriend.InsertItem(m_listFriend.GetItemCount(), fullName);
-			m_listFriend.SetItemText(index, 1, friendItem.Username);
+		if (searchKey.IsEmpty() || fullNameLower.Find(searchKey) != -1) {
+			int index = m_listFriend.InsertItem(m_listFriend.GetItemCount(), friendItem.FullName);
+			m_listFriend.SetItemData(index, i); // lưu chỉ số
 		}
 	}
 }

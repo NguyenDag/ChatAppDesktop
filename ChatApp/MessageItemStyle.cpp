@@ -544,18 +544,18 @@ BOOL MessageItemStyle::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 
 void MessageItemStyle::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	CString debugPoint;
+	/*CString debugPoint;
 	debugPoint.Format(_T("Chuột đã click ở đâyyyy: x = %d, y = %d"), point.x, point.y);
-	OutputDebugString(debugPoint);
+	OutputDebugString(debugPoint);*/
 
 	int fileIndex = -1;
 	int imageIndex = -1;
 	if (HandleFileClick(point, fileIndex, imageIndex))
 	{
-		CString debugClick;
+		/*CString debugClick;
+
 		debugClick.Format(_T("Nút download đã click ở vị trí: Index File: %d; Index Image: %d\n"), fileIndex, imageIndex);
-		OutputDebugString(debugClick);
-		//MessageBox(_T("Trúng nút download!"), _T("Test 2"));
+		OutputDebugString(debugClick);*/
 
 		if (fileIndex >= 0 && fileIndex < m_currentFiles.size())
 		{
@@ -664,7 +664,7 @@ void MessageItemStyle::DrawIncomingMessage(CDC* pDC, const Message& msg, CRect& 
 	int filesHeight = CalculateFilesHeight(msg.GetFiles());
 	int imagesHeight = CalculateImagesHeight(msg.GetImages());
 
-	int totalHeight = contentSize.cy + filesHeight + imagesHeight + (BUBBLE_PADDING * 2);
+	int totalHeight = contentSize.cy + (BUBBLE_PADDING * 2);
 
 	// Bắt đầu vẽ từ đây
 	CRect contentRect;
@@ -730,13 +730,10 @@ void MessageItemStyle::DrawMessageBubble(CDC* pDC, CRect& rect, bool isOutgoing)
 void MessageItemStyle::DrawMessageContent(CDC* pDC, const Message& msg, CRect& rect)
 {
 	CRect contentRect = rect;
+	int currentTop = contentRect.top;
 	if (!msg.GetContent().IsEmpty())
 		contentRect.DeflateRect(BUBBLE_PADDING, BUBBLE_PADDING);
-	/*if (msg.GetContent().IsEmpty() && !HasImages(msg) && HasFiles(msg))
-	{
-		contentRect.right = contentRect.left + 200;
-	}*/
-	// Set text color based on message type
+	
 	if (IsOutgoingMessage(msg))
 	{
 		pDC->SetTextColor(RGB(255, 255, 255));
@@ -749,7 +746,7 @@ void MessageItemStyle::DrawMessageContent(CDC* pDC, const Message& msg, CRect& r
 	pDC->SetBkMode(TRANSPARENT);
 	pDC->SelectObject(&m_fontMessage);
 
-	CSize textSize = CalculateMessageSize(pDC, msg);
+	CSize textSize = CalculateTextSize(pDC, msg.GetContent(), 200);
 
 	// Draw text content
 	if (!msg.GetContent().IsEmpty())
@@ -757,14 +754,23 @@ void MessageItemStyle::DrawMessageContent(CDC* pDC, const Message& msg, CRect& r
 		CRect textRect = contentRect;
 		textRect.bottom = textRect.top + textSize.cy;
 		pDC->DrawText(msg.GetContent(), &textRect, DT_LEFT | DT_TOP | DT_WORDBREAK);
-		contentRect.top = textRect.bottom + 5;
+		//contentRect.top = textRect.bottom + 5;
+		currentTop = textRect.bottom;
+		if (HasFiles(msg) || HasImages(msg))
+		{
+			currentTop += 20;
+		}
 	}
 
 	// Draw files
 	if (HasFiles(msg))
 	{
-		DrawFiles(pDC, msg.GetFiles(), contentRect);
-		contentRect.top += CalculateFilesHeight(msg.GetFiles()) + 5;
+		CRect filesRect = contentRect;
+		filesRect.top = currentTop;
+		filesRect.bottom = filesRect.top + CalculateFilesHeight(msg.GetFiles());
+		DrawFiles(pDC, msg.GetFiles(), filesRect);
+		currentTop = filesRect.bottom;
+		filesRect.top += CalculateFilesHeight(msg.GetFiles()) + 5;
 	}
 
 	// Draw images
@@ -916,8 +922,8 @@ void MessageItemStyle::DrawTimeStamp(CDC* pDC, const Message& msg, CRect& rect, 
 CSize MessageItemStyle::CalculateMessageSize(CDC* pDC, const Message& msg)
 {
 	CSize contentSize = CalculateTextSize(pDC, msg.GetContent(), 200);
-	int filesHeight = CalculateFilesHeight(msg.GetFiles());
-	int imagesHeight = CalculateImagesHeight(msg.GetImages());
+	//int filesHeight = CalculateFilesHeight(msg.GetFiles());
+	//int imagesHeight = CalculateImagesHeight(msg.GetImages());
 	int width;
 	if (!msg.GetContent().IsEmpty())
 		width = contentSize.cx + (BUBBLE_PADDING * 2) + MESSAGE_PADDING;
@@ -925,7 +931,7 @@ CSize MessageItemStyle::CalculateMessageSize(CDC* pDC, const Message& msg)
 		width = 250 + (BUBBLE_PADDING * 2) + MESSAGE_PADDING;
 	else
 		width = (BUBBLE_PADDING * 2) + MESSAGE_PADDING;
-	int height = max(m_nMessageHeight, contentSize.cy + filesHeight + imagesHeight + (BUBBLE_PADDING * 2) + TIME_HEIGHT + MESSAGE_PADDING);
+	int height = max(m_nMessageHeight, contentSize.cy + (BUBBLE_PADDING * 2) + TIME_HEIGHT + MESSAGE_PADDING);
 
 	return CSize(width, height);
 }

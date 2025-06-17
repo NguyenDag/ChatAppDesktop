@@ -50,6 +50,7 @@ BEGIN_MESSAGE_MAP(Login, CDialogEx)
 	ON_WM_CTLCOLOR()
 	ON_BN_CLICKED(IDC_BUTTON_LOGIN, &Login::OnBnClickedLogin)
 	ON_STN_CLICKED(IDC_STATIC_REGISTER, &Login::OnStnClickedRegister)
+	ON_BN_CLICKED(IDC_CHECK_REMEMBER, &Login::OnBnClickedCheckRemember)
 END_MESSAGE_MAP()
 
 
@@ -128,13 +129,27 @@ BOOL Login::OnInitDialog()
 		pStatic->GetWindowRect(&rectErrorStatic);
 		ScreenToClient(&rectErrorStatic);
 		int newX = (dlgwidth - rectErrorStatic.Width()) / 2;
-		//m_stError.MoveWindow(newX, rectLoginBtn.top + 40, rectErrorStatic.Width(), rectErrorStatic.Height());
 		pStatic->SetWindowPos(nullptr, newX, rectLoginBtn.top + 100, rectErrorStatic.Width(), rectErrorStatic.Height(), SWP_NOZORDER | SWP_NOSIZE);
 	}
-	//m_stError.CenterWindow();
 
 	// Brush nền trong suốt
 	m_brushTransparent.CreateStockObject(NULL_BRUSH);
+
+	if (m_loginManager.LoadLoginInfo(username, password))
+	{
+		rememberMe = TRUE;
+		UpdateData(FALSE);
+		m_chkRemember.SetCheck(BST_CHECKED);
+
+		// Focus vào nút OK nếu đã có thông tin
+		GetDlgItem(IDOK)->SetFocus();
+		return FALSE;
+	}
+	else
+	{
+		rememberMe = FALSE;
+		m_chkRemember.SetCheck(BST_UNCHECKED);
+	}
 
 	return TRUE;
 }
@@ -209,15 +224,13 @@ void Login::OnBnClickedLogin()
 		m_stError.SetWindowTextW(errorMessage);
 		return;
 	}
-
-	m_stError.SetWindowTextW(_T("")); 
-	AfxMessageBox(_T("Đăng nhập thành công"));
+	m_loginManager.SaveLoginInfo(username, password, rememberMe);
+	m_stError.SetWindowTextW(_T(""));
 
 	//ShowWindow(SW_HIDE); // ẩn trang login
 	//EndDialog;
 	FriendsList friendsList;
 	friendsList.DoModal();
-	//ShowWindow(SW_SHOW);
 	return;
 }
 
@@ -297,6 +310,17 @@ void Login::OnStnClickedRegister()
 	RegisterDialog regis;
 	regis.DoModal();
 	return;
+}
+
+void Login::OnBnClickedCheckRemember()
+{
+	rememberMe = (m_chkRemember.GetCheck() == BST_CHECKED);
+
+	// Nếu bỏ chọn "Remember me", xóa thông tin đã lưu
+	if (!rememberMe)
+	{
+		m_loginManager.ClearLoginInfo();
+	}
 }
 
 void Login::OnOK()
