@@ -271,7 +271,7 @@ void Login::LoginAccount(const CString& username, const CString& password, CStri
 		res = curl_easy_perform(curl);
 
 		if (res != CURLE_OK) {
-			errorMessage = _T("Lỗi kết nối: ") + CString(curl_easy_strerror(res));
+			errorMessage = _T("Connection error: ") + CString(curl_easy_strerror(res));
 		}
 		else {
 			try {
@@ -291,14 +291,14 @@ void Login::LoginAccount(const CString& username, const CString& password, CStri
 				}
 			}
 			catch (const exception& ex) {
-				errorMessage = _T("Lỗi phân tích JSON: ") + CString(ex.what());
+				errorMessage = _T("Analysis error JSON: ") + CString(ex.what());
 			}
 		}
 		curl_slist_free_all(headers);
 		curl_easy_cleanup(curl);
 	}
 	else {
-		errorMessage = _T("Không thể khởi tạo libcurl!");
+		errorMessage = _T("Unable to initialize libcurl!");
 	}
 
 	curl_global_cleanup();
@@ -316,7 +316,6 @@ void Login::OnBnClickedCheckRemember()
 {
 	rememberMe = (m_chkRemember.GetCheck() == BST_CHECKED);
 
-	// Nếu bỏ chọn "Remember me", xóa thông tin đã lưu
 	if (!rememberMe)
 	{
 		m_loginManager.ClearLoginInfo();

@@ -101,7 +101,7 @@ BOOL MessageItem::OnInitDialog()
 
 	int left = 10;
 	int top = clientRect.Height() - 50;
-	int width = clientRect.Width() * 0.8;
+	int width = static_cast<int> (clientRect.Width() * 0.8);
 	int height = 42;
 
 	m_editSearch.MoveWindow(left, top, width, height);
@@ -186,13 +186,13 @@ bool MessageItem::SendMessageToFriend(const CString& token, const CString& frien
 	try {
 		curl = curl_easy_init();
 		if (!curl) {
-			errorMessage = "Không thể khởi tạo CURL";
+			errorMessage = "Unable to initialize CURL";
 			return false;
 		}
 
 		mime = curl_mime_init(curl);
 		if (!mime) {
-			errorMessage = "Không thể khởi tạo curl_mime";
+			errorMessage = "Unable to initialize curl_mime";
 			curl_easy_cleanup(curl);
 			return false;
 		}
@@ -239,22 +239,22 @@ bool MessageItem::SendMessageToFriend(const CString& token, const CString& frien
 				if (!response.is_discarded() && response.contains("message") && response["message"].is_string())
 					throw std::runtime_error(response["message"].get<std::string>());
 				else
-					throw std::runtime_error("Lỗi HTTP " + std::to_string(http_code));
+					throw std::runtime_error("Error HTTP " + std::to_string(http_code));
 			}
 			else {
-				throw std::runtime_error("Lỗi HTTP " + std::to_string(http_code));
+				throw std::runtime_error("Error HTTP " + std::to_string(http_code));
 			}
 		}
 
 
 		response = nlohmann::json::parse(response_str, nullptr, false);
 		if (response.is_discarded()) {
-			throw std::runtime_error("Không thể phân tích JSON phản hồi");
+			throw std::runtime_error("Unable to analysis responses JSON");
 		}
 
 		int status = response.value("status", 0);
 		if (status != 1) {
-			std::string msg = response.value("message", "Gửi tin nhắn thất bại.");
+			std::string msg = response.value("message", "Fail to sent message!");
 			throw std::runtime_error(msg);
 		}
 
@@ -293,7 +293,7 @@ bool MessageItem::GetMessages(const string& token, vector<Message>& message, str
 
 	curl = curl_easy_init();
 	if (!curl) {
-		errorMessage = "Không thể khởi tạo CURL";
+		errorMessage = "Unable to initialize CURL";
 		return false;
 	}
 
@@ -311,7 +311,7 @@ bool MessageItem::GetMessages(const string& token, vector<Message>& message, str
 	res = curl_easy_perform(curl);
 
 	if (res != CURLE_OK) {
-		errorMessage = string("Lỗi kết nối: ") + curl_easy_strerror(res);
+		errorMessage = string("Connection error: ") + curl_easy_strerror(res);
 		curl_easy_cleanup(curl);
 		curl_slist_free_all(headers);
 		return false;
@@ -331,11 +331,11 @@ bool MessageItem::GetMessages(const string& token, vector<Message>& message, str
 			return true;
 		}
 		else {
-			errorMessage = response.value("message", "Lỗi không xác định");
+			errorMessage = response.value("message", "Unknown error!");
 		}
 	}
 	catch (const exception& e) {
-		errorMessage = string("Lỗi phân tích JSON: ") + e.what();
+		errorMessage = string("Analysis error JSON: ") + e.what();
 	}
 
 	curl_easy_cleanup(curl);
@@ -361,7 +361,7 @@ void MessageItem::LoadMessages()
 				msg.GetMessageType()
 			);
 			CString debugPoint;
-			debugPoint.Format(_T("Vi tri file so: %d\n"), msg.GetFiles());
+			debugPoint.Format(_T("Index of files: %d\n"), msg.GetFiles());
 			OutputDebugString(debugPoint);
 		}
 	}
