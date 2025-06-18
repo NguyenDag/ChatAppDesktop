@@ -97,7 +97,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalDependencies>libcurl_a_debug.lib</AdditionalDependencies>
+      <AdditionalDependencies>libcurl_a.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(ProjectDir)packages\desktop\lib\Lib</AdditionalLibraryDirectories>
     </Link>
     <Midl>
