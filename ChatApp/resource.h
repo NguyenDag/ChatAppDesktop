@@ -17,6 +17,7 @@
 #define IDI_ICON_IMAGE                  145
 #define IDI_ICON_ATTACH                 146
 #define IDI_ICON_SEND                   147
+#define IDD_EMOJI_DIALOG                148
 #define IDC_INPUT_USERNAME              1001
 #define IDC_INPUT_PASSWORD              1002
 #define IDC_BUTTON_LOGIN                1004
@@ -44,14 +45,16 @@
 #define IDC_BTN_IMAGE                   1043
 #define IDC_BTN_FILE                    1044
 #define IDC_BTN_EMOJI                   1045
+#define ID_EMOJI_START					2000
+#define ID_EMOJI_END					2100 
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        148
+#define _APS_NEXT_RESOURCE_VALUE        150
 #define _APS_NEXT_COMMAND_VALUE         32772
-#define _APS_NEXT_CONTROL_VALUE         1046
+#define _APS_NEXT_CONTROL_VALUE         1047
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

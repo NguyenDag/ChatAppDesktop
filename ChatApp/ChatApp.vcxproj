@@ -193,6 +193,7 @@
     <ClInclude Include="ChatAppDlg.h" />
     <ClInclude Include="CImageButton.h" />
     <ClInclude Include="CLoginManager.h" />
+    <ClInclude Include="EmojiDialog.h" />
     <ClInclude Include="FileItem.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="FriendItemCtrl.h" />
@@ -206,6 +207,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="RegisterDialog.h" />
     <ClInclude Include="Resource.h" />
+    <ClInclude Include="SQLiteChatDB.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="Util.h" />
   </ItemGroup>
@@ -214,6 +216,7 @@
     <ClCompile Include="ChatAppDlg.cpp" />
     <ClCompile Include="CImageButton.cpp" />
     <ClCompile Include="CLoginManager.cpp" />
+    <ClCompile Include="EmojiDialog.cpp" />
     <ClCompile Include="FileItem.cpp" />
     <ClCompile Include="FriendItemCtrl.cpp" />
     <ClCompile Include="FriendsList.cpp" />
@@ -230,12 +233,14 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="RegisterDialog.cpp" />
+    <ClCompile Include="SQLiteChatDB.cpp" />
     <ClCompile Include="Util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ChatApp.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="packages.config" />
     <None Include="res\ChatApp.rc2" />
     <None Include="vcpkg.json" />
   </ItemGroup>
@@ -244,6 +249,10 @@
     <Image Include="..\..\..\Downloads\emoji.ico" />
     <Image Include="..\..\..\Downloads\Image_1.ico" />
     <Image Include="..\..\..\Downloads\Polygon-11-_1_.ico" />
+    <Image Include="avatar\images\Attach.ico" />
+    <Image Include="avatar\images\emoji.ico" />
+    <Image Include="avatar\images\Image_1.ico" />
+    <Image Include="avatar\images\Polygon-11-_1_.ico" />
     <Image Include="C:\Users\admin\OneDrive\Hình ảnh\Ảnh chụp màn hình\1_cute.jpg" />
     <Image Include="res\Attach.png" />
     <Image Include="res\ChatApp.ico" />

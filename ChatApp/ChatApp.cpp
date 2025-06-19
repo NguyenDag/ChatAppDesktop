@@ -14,6 +14,7 @@
 #include "RegisterDialog.h"
 #include "FriendsList.h"
 #include "MessageItem.h"
+#include "EmojiDialog.h"
 
 
 // CChatAppApp

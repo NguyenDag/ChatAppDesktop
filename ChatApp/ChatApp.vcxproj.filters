@@ -75,6 +75,12 @@
     <ClInclude Include="CLoginManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SQLiteChatDB.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="EmojiDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ChatApp.cpp">
@@ -125,6 +131,12 @@
     <ClCompile Include="CLoginManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SQLiteChatDB.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="EmojiDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ChatApp.rc">
@@ -136,6 +148,7 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="vcpkg.json" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\ChatApp.ico">
@@ -169,6 +182,18 @@
       <Filter>Resource Files</Filter>
     </Image>
     <Image Include="..\..\..\Downloads\Polygon-11-_1_.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="avatar\images\emoji.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="avatar\images\Image_1.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="avatar\images\Attach.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="avatar\images\Polygon-11-_1_.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

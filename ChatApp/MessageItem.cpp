@@ -9,6 +9,7 @@
 #include "Message.h"
 #include <curl/curl.h>
 #include "Globals.h"
+#include "EmojiDialog.h"
 
 using namespace std;
 
@@ -127,8 +128,22 @@ BOOL MessageItem::OnInitDialog()
 
 void MessageItem::OnDestroy()
 {
-	CDialogEx::OnDestroy();
+	
 	Gdiplus::GdiplusShutdown(gdiplusToken);
+	if (m_pEmojiDlg)
+	{
+		if (::IsWindow(m_pEmojiDlg->GetSafeHwnd()))
+		{
+			m_pEmojiDlg->DestroyWindow(); // Gọi để hủy cửa sổ
+		}
+		else
+		{
+			delete m_pEmojiDlg; // Nếu đã bị DestroyWindow rồi
+		}
+
+		m_pEmojiDlg = nullptr;
+	}
+	CDialogEx::OnDestroy();
 }
 
 void MessageItem::OnPaint()
@@ -382,6 +397,30 @@ void MessageItem::setIconButton(CMFCButton& _idc_button, HICON hicon)
 	_idc_button.SetWindowPos(nullptr, 0, 0, 40, 40, SWP_NOMOVE | SWP_NOZORDER);
 }
 
+void MessageItem::AddEmojiToMessageBox(const CString& emoji)
+{
+	CEdit* pEdit = (CEdit*)GetDlgItem(IDC_EDIT_SEARCH);
+	if (pEdit)
+	{
+		// Lấy vị trí con trỏ hiện tại
+		int startPos, endPos;
+		pEdit->GetSel(startPos, endPos);
+
+		// Lấy text hiện tại
+		CString currentText;
+		pEdit->GetWindowText(currentText);
+
+		// Chèn emoji tại vị trí con trỏ
+		CString newText = currentText.Left(startPos) + emoji + currentText.Mid(endPos);
+		pEdit->SetWindowText(newText);
+
+		// Đặt lại vị trí con trỏ sau emoji
+		int newPos = startPos + emoji.GetLength();
+		pEdit->SetSel(newPos, newPos);
+		pEdit->SetFocus();
+	}
+}
+
 BEGIN_MESSAGE_MAP(MessageItem, CDialogEx)
 	ON_WM_SIZE()
 	ON_BN_CLICKED(IDC_BTN_SEND, &MessageItem::OnBnClickedBtnSend)
@@ -494,23 +533,59 @@ void MessageItem::OnBnClickedBtnFile()
 
 void MessageItem::OnBnClickedBtnEmoji()
 {
-	// TODO: Add your control notification handler code here
+	if (m_pEmojiDlg && ::IsWindow(m_pEmojiDlg->GetSafeHwnd()))
+	{
+		m_pEmojiDlg->DestroyWindow();
+		delete m_pEmojiDlg;
+		m_pEmojiDlg = nullptr;
+		return;
+	}
+
+	// Tạo dialog mới
+	m_pEmojiDlg = new EmojiDialog(this);
+
+	// Gán callback
+	m_pEmojiDlg->OnEmojiSelected = [this](const CString& emoji) {
+		if (!emoji.IsEmpty()) {
+			AddEmojiToMessageBox(emoji);
+		}
+		};
+
+	if (m_pEmojiDlg->Create(IDD_EMOJI_DIALOG, this)) {
+		// Tính vị trí
+		CRect buttonRect;
+		GetDlgItem(IDC_BTN_EMOJI)->GetWindowRect(&buttonRect);
+		CRect dlgRect;
+		m_pEmojiDlg->GetWindowRect(&dlgRect);
+
+		int x = buttonRect.left;
+		int y = buttonRect.top - dlgRect.Height() - 5;
+
+		CRect screenRect;
+		SystemParametersInfo(SPI_GETWORKAREA, 0, &screenRect, 0);
+		if (x + dlgRect.Width() > screenRect.right)
+			x = screenRect.right - dlgRect.Width();
+		if (y < screenRect.top)
+			y = buttonRect.bottom + 5;
+
+		m_pEmojiDlg->SetWindowPos(NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_SHOWWINDOW);
+	}
 }
 
-void DrawDownloadIcon(CDC* pDC, CRect rect)
-{
-	CPen pen(PS_SOLID, 2, RGB(0, 150, 0));
-	CPen* oldPen = pDC->SelectObject(&pen);
-
-	CPoint center = rect.CenterPoint();
-	int size = min(rect.Width(), rect.Height()) / 3;
-
-	pDC->MoveTo(center.x, center.y - size);
-	pDC->LineTo(center.x, center.y + size);
-
-	pDC->MoveTo(center.x - size / 2, center.y + size / 2);
-	pDC->LineTo(center.x, center.y + size);
-	pDC->LineTo(center.x + size / 2, center.y + size / 2);
-
-	pDC->SelectObject(oldPen);
-}
+//void DrawDownloadIcon(CDC* pDC, CRect rect)
+//{
+//	CPen pen(PS_SOLID, 2, RGB(0, 150, 0));
+//	CPen* oldPen = pDC->SelectObject(&pen);
+//
+//	CPoint center = rect.CenterPoint();
+//	int size = min(rect.Width(), rect.Height()) / 3;
+//
+//	pDC->MoveTo(center.x, center.y - size);
+//	pDC->LineTo(center.x, center.y + size);
+//
+//	pDC->MoveTo(center.x - size / 2, center.y + size / 2);
+//	pDC->LineTo(center.x, center.y + size);
+//	pDC->LineTo(center.x + size / 2, center.y + size / 2);
+//
+//	pDC->SelectObject(oldPen);
+//}
